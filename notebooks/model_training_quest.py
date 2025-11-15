@@ -11,7 +11,7 @@
 # COMMAND ----------
 
 # DBTITLE 1,Setup
-# MAGIC %run ./00_setup
+# MAGIC %run ./___setup
 
 # COMMAND ----------
 
@@ -50,7 +50,7 @@ UC_MODEL_NAME = f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model"
 # MAGIC
 # MAGIC **Hints**
 # MAGIC - Inspect the results.
-# MAGIC - Are the contents of the list accurate?
+# MAGIC - Are the contents of the variable lists accurate?
 # MAGIC - Would you change anything?
 
 # COMMAND ----------
@@ -77,7 +77,7 @@ all_feature_cols = numeric_cols + categorical_cols
 
 print("Detected numeric columns:\n\t", numeric_cols)
 print("\nDetected categorical columns:\n\t", categorical_cols)
-coffee_labeled_df.limit(3).display()
+coffee_labeled_df.limit(10).display()
 
 # COMMAND ----------
 
@@ -95,14 +95,14 @@ labeled_fact_df = spark.table(f"{CATALOG}.{MY_SCHEMA}.coffee_labeled_fact")
 
 feature_lookup = FeatureLookup(
     table_name=f"{CATALOG}.{MY_SCHEMA}.coffee_features",
-    feature_names=...,  # replace placeholder
+    feature_names=...,      #TODO replace placeholder
     lookup_key="ID",
     timestamp_lookup_key="Timestamp",
 )
 
 training_set = fe.create_training_set(
     df=labeled_fact_df,
-    feature_lookups=[...],  # replace placeholder
+    feature_lookups=[...],  #TODO replace placeholder
     label=LABEL_COL,
 )
 
@@ -121,7 +121,7 @@ full_labeled_df = training_set.load_df()
 # COMMAND ----------
 
 train_df, valid_df, test_df = full_labeled_df.randomSplit(
-    [..., ..., ...], seed=42  # replace placeholders
+    [..., ..., ...], seed=42  #TODO: replace placeholders
 )
 for split_name, split_df in [
     ("train", train_df),
@@ -266,23 +266,7 @@ for key, value in study.best_params.items():
     print(f"  - {key}: {value}")
 best_params = study.best_params
 
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## Quest 5 · Evaluate the Tuned Model
-# MAGIC **Goal:** fit the best parameters on train+validation, score the test set, and report feature importances.
-# MAGIC
-# MAGIC **Hints**
-# MAGIC - Union train and validation (`train_df.unionByName(valid_df)`).
-# MAGIC - Train with the new df, `train_val_df`
-# MAGIC - Predict `test_df`
-# MAGIC - Use `get_feature_name_mapping` with your version of `numeric_columns_list` and `categorical_columns_list`
-
-# COMMAND ----------
-
-train_val_df = train_df.unionByName(...)  # replace placeholder
-print(f"Train + validation rows: {train_val_df.count():,}")
-
+# Tuned model definition
 best_xgb = SparkXGBClassifier(
     label_col=LABEL_COL,
     features_col="features",
@@ -296,9 +280,26 @@ best_xgb = SparkXGBClassifier(
 )
 
 best_pipeline = Pipeline(stages=[*STAGES, best_xgb])
-best_model = best_pipeline.fit(...)  # replace placeholder
 
-test_pred_df = best_model.transform(...)  # replace placeholder
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Quest 5 · Evaluate the Tuned Model
+# MAGIC **Goal:** fit the best parameters on train+validation, score the test set, and report feature importances.
+# MAGIC
+# MAGIC **Hints**
+# MAGIC - Union train and validation (`train_df.unionByName(valid_df)`).
+# MAGIC - Train with the new df, `train_val_df`
+# MAGIC - Predict `test_df`
+
+# COMMAND ----------
+
+train_val_df = train_df.unionByName(...)  #TODO replace placeholder
+print(f"Train + validation rows: {train_val_df.count():,}")
+
+best_model = best_pipeline.fit(...)       #TODO replace placeholder
+
+test_pred_df = best_model.transform(...)  #TODO replace placeholder
 test_prec0, test_rec0, test_f10 = class_zero_metrics(
     test_pred_df, LABEL_COL, PREDICTION_COL
 )
@@ -342,47 +343,29 @@ display(feature_importance_pdf)
 
 # MAGIC %md
 # MAGIC ## Quest 6 · Register the Final Model
-# MAGIC **Goal:** refit on the full dataset, log artifacts to MLflow, and manage UC aliases.
-# MAGIC
+# MAGIC **Goal:** log artifacts to MLflow, and manage UC aliases.
 
 # COMMAND ----------
 
 # DBTITLE 1,Register final model for production
 client = MlflowClient()
 
-final_xgb = SparkXGBClassifier(
-    label_col=LABEL_COL,
-    features_col="features",
-    probability_col="probability",
-    raw_prediction_col="rawPrediction",
-    prediction_col=PREDICTION_COL,
-    seed=42,
-    tree_method="hist",
-    eval_metric="logloss",
-    **best_params,
-)
-
-final_pipeline = Pipeline(stages=[*STAGES, final_xgb])
-
 with mlflow.start_run(run_name="coffee_xgb_best") as run:
 
-    # Refit the tuned pipeline on the entire labelled dataset before registering it
-    final_model = final_pipeline.fit(full_labeled_df)
-
     sample_inf_df = full_labeled_df.drop("Coffee_Intake_Binary").limit(1)
-    sample_pred_df = final_model.transform(sample_inf_df).select(
+    sample_pred_df = best_model.transform(sample_inf_df).select(
         sample_inf_df.columns + ["prediction"]
     )
 
     signature = mlflow.models.infer_signature(sample_inf_df, sample_pred_df)
 
     mlflow_model_info = mlflow.spark.log_model(
-        spark_model=final_model,
+        spark_model=best_model,
         artifact_path="spark-model-full-data",
         registered_model_name=UC_MODEL_NAME,
         pip_requirements=PIP_REQUIREMENTS,
         signature=signature,
-        input_example=...,
+        input_example=sample_inf_df,
     )
 
     versions = client.search_model_versions(f"name = '{UC_MODEL_NAME}'")
@@ -423,11 +406,11 @@ print("Final XGBoost model trained on full dataset and logged to MLflow.")
 # MAGIC
 # MAGIC Now you have a model registered with the `"champion"` alias.
 # MAGIC
-# MAGIC Suppose new data comes in. How would you handle the logging a new model?
+# MAGIC Suppose new data comes in, in the form of `test_df`. How would you handle the logging a new model?
 # MAGIC
 # MAGIC You can **use the previous cell's logic**, but what would you change?
 # MAGIC
-# MAGIC You do not need to use mlflow to log metrics and set tags for this task (lines 45-61 in previous cell).
+# MAGIC You do not need to use mlflow to log metrics and set tags for this task (lines 28-44 in previous cell).
 # MAGIC
 # MAGIC **Hints**
 # MAGIC - It can be done with the addition of just one line with conditional logic
@@ -437,16 +420,16 @@ print("Final XGBoost model trained on full dataset and logged to MLflow.")
 
 # DBTITLE 1,Promote the challenger
 # New data comes in!
-holdout_df = spark.table(f"{CATALOG}.{MY_SCHEMA}.coffee_prod_holdout")
-
-new_data_for_training, new_data_for_testing = holdout_df.randomSplit(
+new_data_for_training, new_data_for_testing = test_df.randomSplit(
     [0.5, 0.5], seed=42
 )
 
-updated_full_labeled_df = full_labeled_df.unionByName(new_data_for_training)
+updated_df = train_val_df.unionByName(new_data_for_training)
 
-# Champion model
+# Load Champion model by using its alias
 champion_model = mlflow.spark.load_model(f"models:/{UC_MODEL_NAME}@champion")
+
+# Evaluate the Champion model on the new data
 champion_predictions_df = best_model.transform(new_data_for_testing)
 champion_precision, champion_recall, champion_f1 = class_zero_metrics(
     champion_predictions_df, LABEL_COL, PREDICTION_COL
@@ -455,27 +438,28 @@ champion_precision, champion_recall, champion_f1 = class_zero_metrics(
 # Log Challenger model
 with mlflow.start_run(run_name="coffee_xgb_best") as run:
 
-    challenger_model = final_pipeline.fit(updated_full_labeled_df)
+    challenger_model = best_pipeline.fit(updated_df)
     challenger_predictions_df = challenger_model.transform(
         new_data_for_testing
     )
+    # Evaluate the Challenger model on the new data
     challenger_precision, challenger_recall, challenger_f1 = (
         class_zero_metrics(
             challenger_predictions_df, LABEL_COL, PREDICTION_COL
         )
     )
 
-    sample_inf_df = updated_full_labeled_df.drop("Coffee_Intake_Binary").limit(
+    sample_inf_df = updated_df.drop("Coffee_Intake_Binary").limit(
         1
     )
-    sample_pred_df = final_model.transform(sample_inf_df).select(
+    sample_pred_df = challenger_model.transform(sample_inf_df).select(
         sample_inf_df.columns + ["prediction"]
     )
 
     signature = mlflow.models.infer_signature(sample_inf_df, sample_pred_df)
 
     mlflow_model_info = mlflow.spark.log_model(
-        spark_model=final_model,
+        spark_model=challenger_model,
         artifact_path="spark-model-full-data",
         registered_model_name=UC_MODEL_NAME,
         pip_requirements=PIP_REQUIREMENTS,
