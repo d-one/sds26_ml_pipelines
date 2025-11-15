@@ -62,9 +62,8 @@ from xgboost.spark import SparkXGBClassifier
 RANDOM_SEED = 42
 
 # Table paths
-COFFEE_LABELED_DATA_PATH = f"{CATALOG}.{MY_SCHEMA}.coffee_labeled"
-COFFEE_FACT_TABLE_PATH = f"{CATALOG}.{MY_SCHEMA}.coffee_labeled_fact"
-FEATURE_TABLE_PATH = f"{CATALOG}.{MY_SCHEMA}.coffee_features"
+COFFEE_FACT_TABLE_PATH = f"{CATALOG}.{SCHEMA_WITH_SOURCE_DATA}.coffee_labeled_fact"
+FEATURE_TABLE_PATH = f"{CATALOG}.{SCHEMA_WITH_SOURCE_DATA}.coffee_labeled_features"
 
 # Columns
 PRIMARY_KEY_COL = "ID"
@@ -94,7 +93,7 @@ STUDY_NAME = "coffee_optuna_study"
 
 # DBTITLE 1,Column categories
 BASE_COLUMNS = [LABEL_COL, PRIMARY_KEY_COL, TIMESTAMP_COL]
-data_schema_fields = spark.table(COFFEE_LABELED_DATA_PATH).schema.fields
+data_schema_fields = spark.table(FEATURE_TABLE_PATH).schema.fields
 
 # Automatically detect numeric columns
 numeric_cols = [

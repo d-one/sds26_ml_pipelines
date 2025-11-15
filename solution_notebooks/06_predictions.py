@@ -29,8 +29,8 @@ from mlflow import MlflowClient
 
 # DBTITLE 1,Constants
 # Table paths
-HOLDOUT_TABLE_PATH = f"{CATALOG}.{MY_SCHEMA}.coffee_prod_holdout"
-PREDICTIONS_TABLE_PATH = f"{CATALOG}.{MY_SCHEMA}.coffee_prod_predictions"
+HOLDOUT_TABLE_PATH = f"{CATALOG}.{SCHEMA_WITH_SOURCE_DATA}.coffee_prod_holdout"
+PREDICTIONS_TABLE_PATH = f"{CATALOG}.{MY_SCHEMA}.coffee_predictions"
 
 # Columns
 PRIMARY_KEY_COL = "ID"
@@ -136,3 +136,7 @@ predictions_df.write.format("delta").mode("overwrite").option(
 print(
     f"DataFrame predictions_df has been written to table:\n\t- {PREDICTIONS_TABLE_PATH}"
 )
+
+# COMMAND ----------
+
+predictions_df.display()

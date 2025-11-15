@@ -13,54 +13,30 @@
 
 # COMMAND ----------
 
-# DBTITLE 1,Imports
-import databricks.automl as automl
-from datetime import date
-
-# COMMAND ----------
-
-# DBTITLE 1,Constants
-# Table paths
-FEATURE_TABLE_PATH = f"{CATALOG}.{MY_SCHEMA}.coffee_features"
-
-# Columns
-PRIMARY_KEY_COL = "ID"
-TIMESTAMP_COL = "Timestamp"
-LABEL_COL = "Coffee_Intake_Binary"
-
-# AutoML parameters
-AUTOML_TIMEOUT_MINUTES = 10
-AUTOML_EXPERIMENT_DIRECTORY = f"/Workspace/Users/{USER_EMAIL}/automl_experiments/"
-
-today = date.today().strftime("%Y_%m_%d")
-EXPERIMENT_NAME =f"coffee_automl_{today}"
-
-# COMMAND ----------
-
-training_data_df = spark.table(FEATURE_TABLE_PATH)
+training_data_df = spark.table("gtc25_ml_catalog.source_data.coffee_labeled_features")
 
 # COMMAND ----------
 
 # DBTITLE 1,AutoML
+import databricks.automl as automl
+
+# AutoML parameters
+AUTOML_EXPERIMENT_DIRECTORY = f"/Workspace/Users/{USER_EMAIL}/automl_experiments/"
+EXPERIMENT_NAME =f"coffee_automl_{MY_NAME}"
+
+print("-" * 100)
+print("Creating AutoML experiment")
+print(f"\t-Experiment Directory:\t{AUTOML_EXPERIMENT_DIRECTORY}")
+print(f"\t-Experiment Name:\t{EXPERIMENT_NAME}")
+print("-" * 100, "\n")
+
 summary = automl.classify(
     dataset=training_data_df,
-    target_col=LABEL_COL,
+    target_col="Coffee_Intake_Binary",
     primary_metric="f1",
-    # data_dir=  = None,
     experiment_dir=AUTOML_EXPERIMENT_DIRECTORY,
     experiment_name=EXPERIMENT_NAME,
-    exclude_cols=[PRIMARY_KEY_COL, TIMESTAMP_COL],
-    # exclude_frameworks=None,
-    # feature_store_lookups=None,
-    # imputers=None,
+    exclude_cols=["ID", "Timestamp"],
     pos_label="0",
-    # time_col=None,
-    # split_col=None,
-    # sample_weight_col=None,
-    # max_trials=None,
-    timeout_minutes=AUTOML_TIMEOUT_MINUTES,  # Default value 120 minutes
+    timeout_minutes=5,  # Default value 120 minutes, minimum 5 minutes
 )
-
-# COMMAND ----------
-
-print(f"Best trial notebook: {summary.best_trial.notebook_path}")
