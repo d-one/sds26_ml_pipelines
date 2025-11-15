@@ -54,7 +54,7 @@ BASE_COLUMNS = ["Coffee_Intake_Binary", "ID", "Timestamp"]
 coffee_labeled_df=spark.table(f"{CATALOG}.{MY_SCHEMA}.coffee_labeled")
 data_schema_fields = coffee_labeled_df.schema.fields
 
-numeric_cols = [                                                                                 # replace placeholder
+numeric_cols = [                                                                                     # replace placeholder
     field.name
     for field in data_schema_fields
     if field.dataType
@@ -68,16 +68,11 @@ categorical_cols = [                                                            
     if field.dataType == T.StringType() and field.name not in BASE_COLUMNS
 ]
 
-all_feature_cols = numeric_cols + categorical_cols                                                            # replace placeholders
+all_feature_cols = numeric_cols + categorical_cols                                                   # replace placeholders
 
 print("Detected numeric columns:\n\t", numeric_cols)
 print("\nDetected categorical columns:\n\t", categorical_cols)
 coffee_labeled_df.limit(3).display()
-
-# COMMAND ----------
-
-numeric_cols.remove('Alcohol_Consumption')
-print(numeric_cols)
 
 # COMMAND ----------
 
@@ -115,7 +110,7 @@ full_labeled_df = training_set.load_df()
 # MAGIC **Goal:** create data splits, build preprocessing stages, and configure the MLflow experiment.
 # MAGIC
 # MAGIC **Hints**
-# MAGIC - Use `randomSplit([0.6, 0.2, 0.2])
+# MAGIC - Use three float numbers to do the splitting. What do you think is a good split?
 # MAGIC
 
 # COMMAND ----------
@@ -164,6 +159,7 @@ mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
 # MAGIC
 # MAGIC **Hints**
 # MAGIC - You can use `study.enqueue_trial(seed_params, skip_if_exists=True)` before `study.optimize` to start from a specific set of hyperparameters.
+# MAGIC - AutoML experiment: https://adb-1451829595406012.12.azuredatabricks.net/ml/experiments/2194677846827561?o=1451829595406012
 
 # COMMAND ----------
 
@@ -340,10 +336,6 @@ display(feature_importance_pdf)
 # MAGIC ## Quest 6 · Register the Final Model
 # MAGIC **Goal:** refit on the full dataset, log artifacts to MLflow, and manage UC aliases.
 # MAGIC
-# MAGIC **Hints**
-# MAGIC - What would be a good input example
-# MAGIC - Make sure to log the correct metrics/tables!
-# MAGIC
 
 # COMMAND ----------
 
@@ -386,7 +378,6 @@ with mlflow.start_run(run_name="coffee_xgb_best") as run:
 
     versions = client.search_model_versions(f"name = '{UC_MODEL_NAME}'")
     champion_version = versions[0].version
-    lineage = versions[1].version
 
     client.set_registered_model_alias(
         UC_MODEL_NAME, "champion", champion_version
@@ -395,13 +386,13 @@ with mlflow.start_run(run_name="coffee_xgb_best") as run:
     mlflow.log_params(best_params)
     mlflow.log_metrics(
         {
-            "test_precision0": float(...),                                                   # replace placeholders
-            "test_recall0": float(...),
-            "test_f10": float(...),
+            "test_precision0": float(test_prec0),                                                   # replace placeholders
+            "test_recall0": float(test_rec0),
+            "test_f10": float(test_f10),
         }
     )
-    mlflow.log_table(..., "test_confusion_matrix.json")                                      # replace placeholders
-    mlflow.log_table(..., "xgb_feature_importances.json")
+    mlflow.log_table(conf_mat_pdf, "test_confusion_matrix.json")                                      # replace placeholders
+    mlflow.log_table(feature_importance_pdf, "xgb_feature_importances.json")
     mlflow.set_tags(
         tags={
             "project": "coffee_project_tag",
@@ -421,25 +412,62 @@ print("Final XGBoost model trained on full dataset and logged to MLflow.")
 # MAGIC %md
 # MAGIC ## **Bonus!**
 # MAGIC
-# MAGIC Suppose you already have a model registered with the `"champion"` alias. How would you handle logging?
+# MAGIC Now you have a model registered with the `"champion"` alias. 
+# MAGIC
+# MAGIC Suppose new data comes in. How would you handle the logging a new model?
+# MAGIC
+# MAGIC You can **use the previous cell's logic**, but what would you change?
+# MAGIC
+# MAGIC You do not need to use mlflow to log metrics and set tags for this task (lines 45-61 in previous cell).
 # MAGIC
 # MAGIC **Hints**
-# MAGIC - You can use the previous cell's logic, but what would you change?
+# MAGIC - It can be done with the addition of just one line with conditional logic
+# MAGIC - It has to do with aliases
 
 # COMMAND ----------
 
+# New data comes in!
+holdout_df = spark.table(f"{CATALOG}.{MY_SCHEMA}.coffee_prod_holdout") 
 
-
-new_data_for_training, new_data_for_testing = full_labeled_df.randomSplit(
-    [0.5, 0.5], seed=42                                                    # replace placeholders
+new_data_for_training, new_data_for_testing = holdout_df.randomSplit(
+    [0.5, 0.5], seed=42
 )
 
+updated_full_labeled_df = full_labeled_df.unionByName(new_data_for_training)
 
-
+# Champion model
 champion_model = mlflow.spark.load_model(f"models:/{UC_MODEL_NAME}@champion")
-champion_predictions_df = best_model.transform()                                                       
+champion_predictions_df = best_model.transform(new_data_for_testing)
 champion_precision, champion_recall, champion_f1 = class_zero_metrics(
     champion_predictions_df, LABEL_COL, PREDICTION_COL
 )
 
-# Write promotion logic below
+# Challenger model
+challenger_model = final_pipeline.fit(updated_full_labeled_df)
+challenger_predictions_df = challenger_model.transform(new_data_for_testing)
+challenger_precision, challenger_recall, challenger_f1 = class_zero_metrics(
+    challenger_predictions_df, LABEL_COL, PREDICTION_COL
+)
+
+with mlflow.start_run(run_name="coffee_xgb_best") as run:
+
+    sample_inf_df = updated_full_labeled_df.drop("Coffee_Intake_Binary").limit(1)
+    sample_pred_df = final_model.transform(sample_inf_df).select(
+        sample_inf_df.columns + ["prediction"]
+    )
+
+    signature = mlflow.models.infer_signature(sample_inf_df, sample_pred_df)
+
+    mlflow_model_info = mlflow.spark.log_model(
+        spark_model=final_model,
+        artifact_path="spark-model-full-data",
+        registered_model_name=UC_MODEL_NAME,
+        pip_requirements=PIP_REQUIREMENTS,
+        signature=signature,
+        input_example=sample_inf_df,
+    )
+
+    versions = client.search_model_versions(f"name = '{UC_MODEL_NAME}'")
+    champion_version = versions[0].version
+
+    #TODO: Write promotion logic below
