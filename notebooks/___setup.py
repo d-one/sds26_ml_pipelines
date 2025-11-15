@@ -1,6 +1,9 @@
 # Databricks notebook source
 import os
 import re
+from typing import Tuple
+
+from pyspark.sql import functions as F
 
 # --- Defaults ---
 CATALOG = "gtc25_ml_catalog"
@@ -15,6 +18,13 @@ MY_NAME = re.sub(r"[^a-zA-Z0-9_]", "_", MY_NAME)
 
 MY_SCHEMA = MY_NAME
 
+PIP_REQUIREMENTS = [
+    "mlflow==3.6.0",
+    "pyspark==3.5.2",
+    "scikit-learn==1.4.2",
+    "xgboost==2.0.3",
+]
+
 spark.sql(f"CREATE SCHEMA IF NOT EXISTS {CATALOG}.{MY_SCHEMA}")
 
 print("The following variables have been set:")
@@ -22,11 +32,9 @@ print(f"- USER_EMAIL:".ljust(30) + f"{USER_EMAIL}")
 print(f"- CATALOG:".ljust(30) + f"{CATALOG}")
 print(f"- SCHEMA_WITH_SOURCE_DATA:".ljust(30) + f"{SCHEMA_WITH_SOURCE_DATA}")
 print(f"- MY_SCHEMA:".ljust(30) + f"{MY_SCHEMA}")
+print(f"- PIP_REQUIREMENTS")
 
 # COMMAND ----------
-
-from pyspark.sql import functions as F
-from typing import Any, Dict, List, Optional, Tuple
 
 
 def class_zero_metrics(
@@ -83,7 +91,10 @@ def get_feature_name_mapping(
                 indexer_col = f"{col_name}_idx"
                 indexer = None
                 for stage in pipeline_model.stages:
-                    if isinstance(stage, StringIndexerModel) and stage.getOutputCol() == indexer_col:
+                    if (
+                        isinstance(stage, StringIndexerModel)
+                        and stage.getOutputCol() == indexer_col
+                    ):
                         indexer = stage
                         break
 
@@ -112,6 +123,7 @@ def get_feature_name_mapping(
 
 
 # COMMAND ----------
+
 
 def _drop_table_if_exists(table_path: str, label: str) -> None:
     if not table_path:
@@ -144,7 +156,9 @@ def _delete_workspace_dir(path: str) -> None:
             if "RESOURCE_DOES_NOT_EXIST" in str(exc):
                 print(f"Workspace directory already missing: {candidate}")
             else:
-                print(f"Unable to delete workspace directory {candidate}: {exc}")
+                print(
+                    f"Unable to delete workspace directory {candidate}: {exc}"
+                )
 
 
 def _delete_named_mlflow_experiment(experiment_name: str) -> None:
@@ -272,7 +286,9 @@ def _drop_feature_table(table_name: str) -> None:
             print(f"Dropped feature store table: {table_name}")
             return
         except Exception as exc:
-            print(f"Unable to drop feature table via client {table_name}: {exc}")
+            print(
+                f"Unable to drop feature table via client {table_name}: {exc}"
+            )
     _drop_table_if_exists(table_name, "feature table")
 
 
@@ -282,7 +298,8 @@ def cleanup1() -> None:
         f"{CATALOG}.{MY_SCHEMA}.coffee_labeled", "labeled training table"
     )
     _drop_table_if_exists(
-        f"{CATALOG}.{MY_SCHEMA}.coffee_prod_holdout", "production holdout table"
+        f"{CATALOG}.{MY_SCHEMA}.coffee_prod_holdout",
+        "production holdout table",
     )
 
 
@@ -307,9 +324,7 @@ def cleanup4() -> None:
     """Remove AutoML experiments and notebooks."""
     _delete_mlflow_experiments_matching("coffee_automl_")
     _delete_mlflow_experiments_matching("automl_experiments")
-    _delete_workspace_dir(
-        f"/Workspace/Users/{USER_EMAIL}/automl_experiments"
-    )
+    _delete_workspace_dir(f"/Workspace/Users/{USER_EMAIL}/automl_experiments")
 
 
 def cleanup5() -> None:
@@ -317,9 +332,7 @@ def cleanup5() -> None:
     _delete_named_mlflow_experiment(
         f"/Workspace/Users/{USER_EMAIL}/coffee_hp_tuning_experiment"
     )
-    _delete_registered_model(
-        f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model"
-    )
+    _delete_registered_model(f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model")
 
 
 def cleanup6() -> None:
