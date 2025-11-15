@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # 06 – Coffee Intake Predictions Simulation
+# MAGIC # Simulation of predictions in production
 # MAGIC
 # MAGIC This notebook:
 # MAGIC 1. Loads the time-based scoring holdout prepared in `03_feature_store`.
@@ -15,7 +15,7 @@
 # COMMAND ----------
 
 # DBTITLE 1,Setup
-# MAGIC %run ./00_setup
+# MAGIC %run ./setup
 
 # COMMAND ----------
 
