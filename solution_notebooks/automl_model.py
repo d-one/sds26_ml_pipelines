@@ -13,6 +13,7 @@
 
 # COMMAND ----------
 
+# DBTITLE 1,Load Feature table
 training_data_df = spark.table("gtc25_ml_catalog.source_data.coffee_labeled_features")
 
 # COMMAND ----------
