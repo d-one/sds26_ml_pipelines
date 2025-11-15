@@ -25,6 +25,16 @@ print(f"- MY_SCHEMA:".ljust(30) + f"{MY_SCHEMA}")
 
 # COMMAND ----------
 
+# DBTITLE 1,Model training notebook
+PIP_REQUIREMENTS = [
+    "mlflow==3.6.0",
+    "pyspark==3.5.2",
+    "scikit-learn==1.4.2",
+    "xgboost==2.0.3",
+]
+
+# COMMAND ----------
+
 from pyspark.sql import functions as F
 from typing import Any, Dict, List, Optional, Tuple
 

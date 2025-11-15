@@ -31,32 +31,11 @@ from xgboost.spark import SparkXGBClassifier
 # COMMAND ----------
 
 # DBTITLE 1,Constants
-RANDOM_SEED = 42
-
-COFFEE_LABELED_DATA_PATH = f"{CATALOG}.{MY_SCHEMA}.coffee_labeled"
-COFFEE_FACT_TABLE_PATH = f"{CATALOG}.{MY_SCHEMA}.coffee_labeled_fact"
-FEATURE_TABLE_PATH = f"{CATALOG}.{MY_SCHEMA}.coffee_features"
-
-PRIMARY_KEY_COL = "ID"
-TIMESTAMP_COL = "Timestamp"
 LABEL_COL = "Coffee_Intake_Binary"
 PREDICTION_COL = "prediction"
 
 MLFLOW_EXPERIMENT_NAME = f"/Workspace/Users/{USER_EMAIL}/coffee_hp_tuning_experiment"
-PARENT_EXPERIMENT_NAME = "parent_run_optuna_hp"
-PROJECT_TAG = "coffee_project_tag"
-HYPERPARAMETER_TUNING_TAG = "coffee_hp_tuning_tag"
 UC_MODEL_NAME = f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model"
-PIP_REQUIREMENTS = [
-    "mlflow==3.6.0",
-    "pyspark==3.5.2",
-    "scikit-learn==1.4.2",
-    "xgboost==2.0.3",
-]
-
-OPTUNA_TRIALS = 5
-OPTUNA_JOBS = -1
-STUDY_NAME = "coffee_optuna_study"
 
 # COMMAND ----------
 
@@ -65,16 +44,17 @@ STUDY_NAME = "coffee_optuna_study"
 # MAGIC **Goal:** detect numeric and categorical columns from the labeled dataset.
 # MAGIC
 # MAGIC **Hints**
-# MAGIC - Read `COFFEE_LABELED_DATA_PATH` to access the schema.
-# MAGIC - Exclude `LABEL_COL`, `PRIMARY_KEY_COL`, and `TIMESTAMP_COL` from both lists.
-# MAGIC - Use the `pyspark.sql.types` classes (`T.IntegerType`, etc.) for comparisons.
+# MAGIC - Inspect the results. 
+# MAGIC - Are the contents of the list accurate? 
+# MAGIC - Would you change anything?
 
 # COMMAND ----------
 
-BASE_COLUMNS = [LABEL_COL, PRIMARY_KEY_COL, TIMESTAMP_COL]
-data_schema_fields = spark.table(COFFEE_LABELED_DATA_PATH).schema.fields
+BASE_COLUMNS = ["Coffee_Intake_Binary", "ID", "Timestamp"]
+coffee_labeled_df=spark.table(f"{CATALOG}.{MY_SCHEMA}.coffee_labeled")
+data_schema_fields = coffee_labeled_df.schema.fields
 
-... = [                                                                                 # replace placeholder
+numeric_cols = [                                                                                 # replace placeholder
     field.name
     for field in data_schema_fields
     if field.dataType
@@ -82,16 +62,22 @@ data_schema_fields = spark.table(COFFEE_LABELED_DATA_PATH).schema.fields
     and field.name not in BASE_COLUMNS
 ]
 
-... = [                                                                                 # replace placeholder
+categorical_cols = [                                                                                 # replace placeholder
     field.name
     for field in data_schema_fields
     if field.dataType == T.StringType() and field.name not in BASE_COLUMNS
 ]
 
-all_feature_cols = ... + ...                                                            # replace placeholders
+all_feature_cols = numeric_cols + categorical_cols                                                            # replace placeholders
 
-print("Detected numeric columns:\n\t", ...)
-print("\nDetected categorical columns:\n\t", ...)
+print("Detected numeric columns:\n\t", numeric_cols)
+print("\nDetected categorical columns:\n\t", categorical_cols)
+coffee_labeled_df.limit(3).display()
+
+# COMMAND ----------
+
+numeric_cols.remove('Alcohol_Consumption')
+print(numeric_cols)
 
 # COMMAND ----------
 
@@ -100,21 +86,18 @@ print("\nDetected categorical columns:\n\t", ...)
 # MAGIC **Goal:** load the fact table and build a Feature Store training set that joins in features.
 # MAGIC
 # MAGIC **Hints**
-# MAGIC - Instantiate `FeatureEngineeringClient()` and read `COFFEE_FACT_TABLE_PATH`.
-# MAGIC - Configure a `FeatureLookup` with the `FEATURE_TABLE_PATH`, feature list, ID, and timestamp.
-# MAGIC - Call `training_set.load_df()` to materialize `full_labeled_df`.
+# MAGIC - Use the feature list you configured in the previous quest
 
 # COMMAND ----------
 
-# TODO: Materialize the Feature Store training set.
 fe = FeatureEngineeringClient()
-labeled_fact_df = spark.table(...)                                                      # replace placeholder
+labeled_fact_df = spark.table(f"{CATALOG}.{MY_SCHEMA}.coffee_labeled_fact")                                                 
 
 feature_lookup = FeatureLookup(
-    table_name=FEATURE_TABLE_PATH,
-    feature_names=...,                                                                  # replace placeholder
-    lookup_key=PRIMARY_KEY_COL,
-    timestamp_lookup_key=TIMESTAMP_COL,
+    table_name=f"{CATALOG}.{MY_SCHEMA}.coffee_features",
+    feature_names=...,                                                          
+    lookup_key="ID",
+    timestamp_lookup_key="Timestamp",
 )
 
 training_set = fe.create_training_set(
@@ -129,19 +112,16 @@ full_labeled_df = training_set.load_df()
 
 # MAGIC %md
 # MAGIC ## Quest 3 · Configure Splits, Pipeline, and MLflow
-# MAGIC **Goal:** create train/validation/test splits, build preprocessing stages, and configure the MLflow experiment.
+# MAGIC **Goal:** create data splits, build preprocessing stages, and configure the MLflow experiment.
 # MAGIC
 # MAGIC **Hints**
-# MAGIC - Use `randomSplit([0.6, 0.2, 0.2], seed=RANDOM_SEED)`.
-# MAGIC - Pipeline stages follow the pattern: StringIndexer → OneHotEncoder → VectorAssembler. 
-# MAGIC     - StringIndexer and OneHotEncoder use your version of `categorical_columns_list`
-# MAGIC     - VectorAssembler uses a `assembler_input_cols` which is the concatenation of your version of `numeric_columns_list` + a list with ohe columns
-# MAGIC - Set the MLflow registry URI to `databricks-uc`, disable autolog, and ensure the experiment exists.
+# MAGIC - Use `randomSplit([0.6, 0.2, 0.2])
+# MAGIC
 
 # COMMAND ----------
 
 train_df, valid_df, test_df = full_labeled_df.randomSplit(
-    [..., ..., ...], seed=RANDOM_SEED                                                    # replace placeholders
+    [..., ..., ...], seed=42                                                    # replace placeholders
 )
 for split_name, split_df in [
     ("train", train_df),
@@ -152,22 +132,22 @@ for split_name, split_df in [
 
 indexers = [
     StringIndexer(inputCol=c, outputCol=f"{c}_idx", handleInvalid="keep")
-    for c in ...                                                                          # replace placeholder
+    for c in categorical_cols                                                                        
 ]
 encoder = OneHotEncoder(
-    inputCols=[f"{c}_idx" for c in ...],                                                  # replace placeholders
-    outputCols=[f"{c}_ohe" for c in ...],
+    inputCols=[f"{c}_idx" for c in categorical_cols],                                             
+    outputCols=[f"{c}_ohe" for c in categorical_cols],
     handleInvalid="keep",
-    dropLast=False,
+    dropLast=True,
 )
-assembler_input_cols = ... + [f"{c}_ohe" for c in ...]                                    # replace placeholders
+
+assembler_input_cols = numeric_cols + [f"{c}_ohe" for c in categorical_cols]
 assembler = VectorAssembler(
     inputCols=assembler_input_cols, outputCol="features", handleInvalid="keep"
 )
 STAGES = indexers + [encoder, assembler]
 print("VectorAssembler inputs:", assembler_input_cols)
 
-mlflow.set_registry_uri("...")                                                            # replace placeholder
 mlflow.autolog(disable=True)
 exp = mlflow.get_experiment_by_name(MLFLOW_EXPERIMENT_NAME)
 if exp is None:
@@ -183,29 +163,12 @@ mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
 # MAGIC **Goal:** run Optuna with the refreshed objective function and AutoML seed parameters.
 # MAGIC
 # MAGIC **Hints**
-# MAGIC - Use `study.enqueue_trial(automl_seed_params, skip_if_exists=True)` before `study.optimize` to start from the best set of AutoML parameters.
+# MAGIC - You can use `study.enqueue_trial(seed_params, skip_if_exists=True)` before `study.optimize` to start from a specific set of hyperparameters.
 
 # COMMAND ----------
 
 optuna.logging.set_verbosity(optuna.logging.ERROR)
 
-
-def champion_callback(study, frozen_trial):
-    winner = study.user_attrs.get("winner", None)
-    if study.best_value and winner != study.best_value:
-        study.set_user_attr("winner", study.best_value)
-        if winner:
-            improvement_percent = (
-                abs(winner - study.best_value) / study.best_value
-            ) * 100
-            print(
-                f"Trial {frozen_trial.number} achieved value: {frozen_trial.value} "
-                f"with {improvement_percent: .4f}% improvement"
-            )
-        else:
-            print(
-                f"Initial trial {frozen_trial.number} achieved value: {frozen_trial.value}"
-            )
 
 
 def objective(trial: optuna.Trial) -> float:
@@ -230,11 +193,6 @@ def objective(trial: optuna.Trial) -> float:
             "colsample_bytree": trial.suggest_float(
                 "colsample_bytree", 0.5, 1.0
             ),
-            "reg_lambda": trial.suggest_float(
-                "reg_lambda", 1e-3, 10.0, log=True
-            ),
-            "reg_alpha": trial.suggest_float("reg_alpha", 1e-4, 1.0, log=True),
-            "num_round": trial.suggest_int("num_round", 100, 1200),
         }
 
         xgb = SparkXGBClassifier(
@@ -243,7 +201,7 @@ def objective(trial: optuna.Trial) -> float:
             probability_col="probability",
             raw_prediction_col="rawPrediction",
             prediction_col=PREDICTION_COL,
-            seed=RANDOM_SEED,
+            seed=42,
             tree_method="hist",
             eval_metric="logloss",
             **params,
@@ -270,36 +228,33 @@ def objective(trial: optuna.Trial) -> float:
         return val_f10
 
 
-automl_seed_params = {
-    "eta": 0.05759496965676729,
-    "colsample_bytree": 0.6263993741226758,
-    "max_depth": 9,
-    "min_child_weight": 5.0,
-    "subsample": 0.6616262667209235,
-    "reg_lambda": 1.0,
-    "reg_alpha": 1e-4,
-    "num_round": 1079,
+seed_params = {
+    "eta": ..., # also known as learning rate
+    "colsample_bytree": ...,
+    "max_depth": ...,
+    "min_child_weight": ...,
+    "subsample": ...,
 }
 
 with mlflow.start_run(
-    experiment_id=exp_id, run_name=PARENT_EXPERIMENT_NAME, nested=True
+    experiment_id=exp_id, run_name="parent_run_optuna_hp", nested=True
 ) as parent_run:
-    study = optuna.create_study(direction="maximize", study_name=STUDY_NAME)
-    study.enqueue_trial(..., skip_if_exists=True)                                              # replace placeholder
+    study = optuna.create_study(direction="maximize", study_name="coffee_optuna_study")
+    # study.enqueue_trial(seed_params, skip_if_exists=True)
     study.optimize(
         objective,
-        n_trials=OPTUNA_TRIALS,
-        n_jobs=OPTUNA_JOBS,
+        n_trials=5,
+        n_jobs=-1,
         show_progress_bar=True,
-        callbacks=[champion_callback],
+        # callbacks=[champion_callback],
     )
 
     mlflow.log_params(study.best_params)
     mlflow.log_metric("best_validation_f1", float(study.best_value))
     mlflow.set_tags(
         tags={
-            "project": PROJECT_TAG,
-            "optimizer_engine": HYPERPARAMETER_TUNING_TAG,
+            "project": "coffee_project_tag",
+            "optimizer_engine": "coffee_hp_tuning_tag",
         }
     )
 
@@ -323,7 +278,6 @@ best_params = study.best_params
 
 # COMMAND ----------
 
-# TODO: Fit the best parameters and evaluate on the test set.
 train_val_df = train_df.unionByName(...)                                                         # replace placeholder
 print(f"Train + validation rows: {train_val_df.count():,}")
 
@@ -333,7 +287,7 @@ best_xgb = SparkXGBClassifier(
     probability_col="probability",
     raw_prediction_col="rawPrediction",
     prediction_col=PREDICTION_COL,
-    seed=RANDOM_SEED,
+    seed=42,
     tree_method="hist",
     eval_metric="logloss",
     **best_params,
@@ -355,10 +309,10 @@ conf_mat_df = (
 conf_mat_pdf = conf_mat_df.toPandas()
 display(conf_mat_pdf)
 
-feature_name_mapping = get_feature_name_mapping(                                                 # replace placeholders
+feature_name_mapping = get_feature_name_mapping(
     best_model,
-    ..., # numeric columns list
-    ..., # categorical columns list
+    numeric_cols, 
+    categorical_cols, 
 )
 feature_importances = best_model.stages[-1].get_feature_importances()
 
@@ -387,13 +341,14 @@ display(feature_importance_pdf)
 # MAGIC **Goal:** refit on the full dataset, log artifacts to MLflow, and manage UC aliases.
 # MAGIC
 # MAGIC **Hints**
+# MAGIC - What would be a good input example
 # MAGIC - Make sure to log the correct metrics/tables!
+# MAGIC
 
 # COMMAND ----------
 
 # DBTITLE 1,Register final model for production
 client = MlflowClient()
-mlflow.set_registry_uri("databricks-uc")
 
 with mlflow.start_run(run_name="coffee_xgb_best") as run:
 
@@ -404,7 +359,7 @@ with mlflow.start_run(run_name="coffee_xgb_best") as run:
         probability_col="probability",
         raw_prediction_col="rawPrediction",
         prediction_col=PREDICTION_COL,
-        seed=RANDOM_SEED,
+        seed=42,
         tree_method="hist",
         eval_metric="logloss",
         **best_params,
@@ -420,23 +375,13 @@ with mlflow.start_run(run_name="coffee_xgb_best") as run:
 
     signature = mlflow.models.infer_signature(sample_inf_df, sample_pred_df)
 
-    fe_model_info = fe.log_model(
-        artifact_path="spark-model-full-data",
-        model=final_model,
-        flavor=mlflow.spark,
-        training_set=training_set,
-        registered_model_name=UC_MODEL_NAME,
-        signature=signature,
-        infer_input_example=sample_inf_df.toPandas(),
-    )
-
     mlflow_model_info = mlflow.spark.log_model(
         spark_model=final_model,
         artifact_path="spark-model-full-data",
         registered_model_name=UC_MODEL_NAME,
-        signature=signature,
-        input_example=sample_inf_df.toPandas(),
         pip_requirements=PIP_REQUIREMENTS,
+        signature=signature,
+        input_example=...,
     )
 
     versions = client.search_model_versions(f"name = '{UC_MODEL_NAME}'")
@@ -446,18 +391,6 @@ with mlflow.start_run(run_name="coffee_xgb_best") as run:
     client.set_registered_model_alias(
         UC_MODEL_NAME, "champion", champion_version
     )
-    # Delete the model version with alias "lineage"
-    try:
-        lineage_version = client.get_model_version_by_alias(
-            UC_MODEL_NAME, "lineage"
-        ).version
-        client.delete_model_version(
-            name=UC_MODEL_NAME, version=lineage_version
-        )
-    except:
-        print("A model version with lineage does not exist.")
-
-    client.set_registered_model_alias(UC_MODEL_NAME, "lineage", lineage)
 
     mlflow.log_params(best_params)
     mlflow.log_metrics(
@@ -471,8 +404,8 @@ with mlflow.start_run(run_name="coffee_xgb_best") as run:
     mlflow.log_table(..., "xgb_feature_importances.json")
     mlflow.set_tags(
         tags={
-            "project": PROJECT_TAG,
-            "optimizer_engine": HYPERPARAMETER_TUNING_TAG,
+            "project": "coffee_project_tag",
+            "optimizer_engine": "coffee_hp_tuning_tag",
             "production_model": True,
         }
     )
@@ -482,3 +415,31 @@ print(f"Test recall0: {test_rec0:.4f}")
 print(f"Test F1 (class 0): {test_f10:.4f}")
 
 print("Final XGBoost model trained on full dataset and logged to MLflow.")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## **Bonus!**
+# MAGIC
+# MAGIC Suppose you already have a model registered with the `"champion"` alias. How would you handle logging?
+# MAGIC
+# MAGIC **Hints**
+# MAGIC - You can use the previous cell's logic, but what would you change?
+
+# COMMAND ----------
+
+
+
+new_data_for_training, new_data_for_testing = full_labeled_df.randomSplit(
+    [0.5, 0.5], seed=42                                                    # replace placeholders
+)
+
+
+
+champion_model = mlflow.spark.load_model(f"models:/{UC_MODEL_NAME}@champion")
+champion_predictions_df = best_model.transform()                                                       
+champion_precision, champion_recall, champion_f1 = class_zero_metrics(
+    champion_predictions_df, LABEL_COL, PREDICTION_COL
+)
+
+# Write promotion logic below
