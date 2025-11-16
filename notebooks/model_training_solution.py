@@ -1,7 +1,9 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # Training & Registering the model
-# MAGIC Time to train and register the model! Work through the refreshed Optuna + MLflow workflow in quest form. Replace every `...` placeholder with real code before executing each quest.
+# MAGIC Time to train and register the model!
+# MAGIC
+# MAGIC Work through the refreshed Optuna + MLflow workflow in quest form. Replace every `...` placeholder with real code before executing each quest.
 
 # COMMAND ----------
 
@@ -47,11 +49,11 @@ UC_MODEL_NAME = f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model"
 # MAGIC %md
 # MAGIC ## Quest 1 · Define Feature Categories
 # MAGIC **Goal:** detect numeric and categorical columns from the labeled dataset.
-# MAGIC
-# MAGIC **Hints**
 # MAGIC - Inspect the results.
 # MAGIC - Are the contents of the variable lists accurate?
 # MAGIC - Would you change anything?
+# MAGIC
+# MAGIC Need a nudge? Use the hint loader below.
 
 # COMMAND ----------
 
@@ -60,6 +62,7 @@ load_hint("model_training", "quest_1")
 
 # COMMAND ----------
 
+# DBTITLE 1,Feature categories
 BASE_COLUMNS = ["Coffee_Intake_Binary", "ID", "Timestamp"]
 coffee_labeled_df = spark.table(f"{CATALOG}.{MY_SCHEMA}.coffee_labeled")
 data_schema_fields = coffee_labeled_df.schema.fields
@@ -86,6 +89,7 @@ coffee_labeled_df.limit(10).display()
 
 # COMMAND ----------
 
+# DBTITLE 1,????
 numeric_cols.remove("Alcohol_Consumption")
 numeric_cols.remove("Smoking")
 
@@ -97,8 +101,7 @@ categorical_cols += ["Alcohol_Consumption", "Smoking"]
 # MAGIC ## Quest 2 · Prepare the Feature Store Training Set
 # MAGIC **Goal:** load the fact table and build a Feature Store training set that joins in features.
 # MAGIC
-# MAGIC **Hints**
-# MAGIC - Use the feature list you configured in the previous quest
+# MAGIC Need a nudge? Use the hint loader below.
 
 # COMMAND ----------
 
@@ -107,6 +110,7 @@ load_hint("model_training", "quest_2")
 
 # COMMAND ----------
 
+# DBTITLE 1,Loading the training set
 fe = FeatureEngineeringClient()
 labeled_fact_df = spark.table(f"{CATALOG}.{MY_SCHEMA}.coffee_labeled_fact")
 
@@ -131,9 +135,9 @@ full_labeled_df = training_set.load_df()
 # MAGIC ## Quest 3 · Configure Splits, Pipeline, and MLflow
 # MAGIC **Goal:** create data splits, build preprocessing stages, and configure the MLflow experiment.
 # MAGIC
-# MAGIC **Hints**
-# MAGIC - Use three float numbers to do the splitting. What do you think is a good split?
+# MAGIC What do you thing is a good split?
 # MAGIC
+# MAGIC Need a nudge? Use the hint loader below.
 
 # COMMAND ----------
 
@@ -142,6 +146,7 @@ load_hint("model_training", "quest_3")
 
 # COMMAND ----------
 
+# DBTITLE 1,Dataset splits & pipeline definition
 train_df, valid_df, test_df = full_labeled_df.randomSplit(
     [0.6, 0.2, 0.2], seed=42  #TODO: replace placeholders
 )
@@ -184,9 +189,7 @@ mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
 # MAGIC ## Quest 4 · Execute the Optuna Study
 # MAGIC **Goal:** run Optuna with a head start!
 # MAGIC
-# MAGIC **Hints**
-# MAGIC - You can use `study.enqueue_trial(seed_params, skip_if_exists=True)` before `study.optimize` to start from a specific set of hyperparameters.
-# MAGIC - AutoML experiment: https://adb-1451829595406012.12.azuredatabricks.net/ml/experiments/1514058481528333?o=1451829595406012
+# MAGIC What starting parameters should we use, if any at all? How would you decide?
 
 # COMMAND ----------
 
@@ -195,6 +198,7 @@ load_hint("model_training", "quest_4")
 
 # COMMAND ----------
 
+# DBTITLE 1,Hyperparameter tuning
 optuna.logging.set_verbosity(optuna.logging.ERROR)
 
 
@@ -314,10 +318,7 @@ best_pipeline = Pipeline(stages=[*STAGES, best_xgb])
 # MAGIC ## Quest 5 · Evaluate the Tuned Model
 # MAGIC **Goal:** fit the best parameters on train+validation, score the test set, and report feature importances.
 # MAGIC
-# MAGIC **Hints**
-# MAGIC - Union train and validation (`train_df.unionByName(valid_df)`).
-# MAGIC - Train with the new df, `train_val_df`
-# MAGIC - Predict `test_df`
+# MAGIC Need a nudge? Use the hint loader below.
 
 # COMMAND ----------
 
@@ -447,10 +448,6 @@ print("Final XGBoost model trained on full dataset and logged to MLflow.")
 # MAGIC You can **use the previous cell's logic**, but what would you change?
 # MAGIC
 # MAGIC You do not need to use mlflow to log metrics and set tags for this task (lines `28-44` in previous cell).
-# MAGIC
-# MAGIC **Hints**
-# MAGIC - It could be done with the addition of just one line with conditional logic
-# MAGIC - There can only be one `"champion"` among models ⚔️...
 
 # COMMAND ----------
 
@@ -459,7 +456,7 @@ load_hint("model_training", "quest_7")
 
 # COMMAND ----------
 
-# DBTITLE 1,Promote the challenger
+# DBTITLE 1,Promote the challenger >> Διαφορετικό κώδικας με quest
 # New data comes in!
 new_data_for_training, new_data_for_testing = test_df.randomSplit(
     [0.5, 0.5], seed=42

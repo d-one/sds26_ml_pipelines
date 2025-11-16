@@ -1,7 +1,9 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # Training & Registering the model
-# MAGIC Time to train and register the model! Work through the refreshed Optuna + MLflow workflow in quest form. Replace every `...` placeholder with real code before executing each quest.
+# MAGIC Time to train and register the model!
+# MAGIC
+# MAGIC Work through the refreshed Optuna + MLflow workflow in quest form. Replace every `...` placeholder with real code before executing each quest.
 
 # COMMAND ----------
 
@@ -60,6 +62,7 @@ load_hint("model_training", "quest_1")
 
 # COMMAND ----------
 
+# DBTITLE 1,Feature categories
 BASE_COLUMNS = ["Coffee_Intake_Binary", "ID", "Timestamp"]
 coffee_labeled_df = spark.table(f"{CATALOG}.{MY_SCHEMA}.coffee_labeled")
 data_schema_fields = coffee_labeled_df.schema.fields
@@ -99,6 +102,7 @@ load_hint("model_training", "quest_2")
 
 # COMMAND ----------
 
+# DBTITLE 1,Loading the training set
 fe = FeatureEngineeringClient()
 labeled_fact_df = spark.table(f"{CATALOG}.{MY_SCHEMA}.coffee_labeled_fact")
 
@@ -134,6 +138,7 @@ load_hint("model_training", "quest_3")
 
 # COMMAND ----------
 
+# DBTITLE 1,Dataset splits & pipeline definition
 train_df, valid_df, test_df = full_labeled_df.randomSplit(
     [..., ..., ...], seed=42  #TODO: replace placeholders
 )
@@ -185,6 +190,7 @@ load_hint("model_training", "quest_4")
 
 # COMMAND ----------
 
+# DBTITLE 1,Hyperparameter tuning
 optuna.logging.set_verbosity(optuna.logging.ERROR)
 
 
