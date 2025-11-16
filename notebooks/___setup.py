@@ -388,7 +388,7 @@ def clean_all() -> None:
 
 # DBTITLE 1,HINTS
 HINTS = {
-    ("predictions","quest_1",): 
+    ("predictions","quest_1"): 
       """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
@@ -399,7 +399,7 @@ HINTS = {
           <pre><code>alias = "@champion"</code></pre>
         </details>
         """,
-    ("predictions","quest_2",):
+    ("predictions","quest_2"):
       """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
@@ -463,16 +463,26 @@ HINTS = {
 
         </details>
         """,
-    (
-        "predictions",
-        "quest_3",
-    ): """
+    ("predictions","quest_3",):
+      """
           <details class="hintbox">
             <summary>Show me the hint!</summary>
+
+            <p class="answer"><strong>Hint for Question 1</strong></p>
+            <p>When you run the cell below there is an output...check it out!</p>
+
+            <p class="answer"><strong>Hint for Question 2</strong></p>
+            <p>Open the Experiment created by mlflow and take a look around!</p>
+
+          </details>
+
+          <details class="hintbox">
+            <summary>Just show me the answer… 🫠</summary>
 
             <p class="answer"><strong>Answer to Question 1</strong></p>
             <p>When you run the following code, MLflow creates the output:</p>
             <p><code>Logged 1 run to an experiment in MLflow.</code></p>
+            <p>You can see it in the <a href="https://adb-1451829595406012.12.azuredatabricks.net/ml/experiments">Experiments</a> page.</p>
             <p>The "run" and "experiment" are links to the corresponding resources. Clicking on them will take you to the Experiments page where you can see the results.</p>
 
             <p class="answer"><strong>Answer to Question 2</strong></p>
@@ -490,7 +500,7 @@ HINTS = {
             </ul>
 
           </details>
-          """,
+        """,
     (
         "model_training",
         "quest_1",
@@ -640,10 +650,6 @@ HINTS = {
 
 # COMMAND ----------
 
-
-
-# COMMAND ----------
-
 # DBTITLE 1,load_hint
 
 def load_hint(notebook, quest_id):
@@ -746,7 +752,3 @@ def load_hint(notebook, quest_id):
         return
 
     displayHTML(base_css + body)
-
-# COMMAND ----------
-
-load_hint("predictions", "quest_2")
