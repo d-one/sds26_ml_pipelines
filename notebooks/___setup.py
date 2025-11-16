@@ -385,11 +385,6 @@ def clean_all() -> None:
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC ## Hints
-
-# COMMAND ----------
-
 # DBTITLE 1,HINTS
 HINTS = {
     ("predictions", "quest_1"): """
@@ -430,8 +425,8 @@ HINTS = {
 
       <ul>
         <li><strong>“_idx” columns:</strong> Numeric category indices created by <em>StringIndexer</em>, used as inputs to the OneHotEncoder.</li>
-        <li><strong>“_ohe” columns:</strong> One-hot encoded vectors produced by <em>OneHotEncoder</em>, used by the VectorAssembler.</li>
-        <li><strong>“features”:</strong> Final feature vector assembled by <em>VectorAssembler</em> and used by the model.</li>
+        <li><strong>“_ohe” columns:</strong> One-hot encoded vectors produced by <em>OneHotEncoder</em>, used as inputs by the VectorAssembler.</li>
+        <li><strong>“features”:</strong> Final feature vector assembled by <em>VectorAssembler</em> and used to train the model.</li>
         <li><strong>“rawPrediction”:</strong> Raw model output scores (margins) for each class.</li>
         <li><strong>“prediction”:</strong> Final predicted class label.</li>
         <li><strong>“probability”:</strong> Probability distribution across all classes.</li>
@@ -444,25 +439,15 @@ HINTS = {
 # COMMAND ----------
 
 # DBTITLE 1,load_hint
-# HINTS = {
-#     ("predictions", "quest_1"): """
-# <details class="hintbox">
-#   <summary>Show me the hint!</summary>
-#   <pre><code>alias = "@champion"</code></pre>
-# </details>
-# """,
-#     ("predictions", "quest_2"): """
-# <details class="hintbox">
-#   <summary>Try this!</summary>
-#   <pre><code>df.select("col1", "col2")</code></pre>
-# </details>
-# """
-# }
-
-
 def load_hint(notebook, quest_id):
     base_css = """
     <style>
+
+    * {
+      font-size: 12px;
+    }
+
+
     .hintbox summary {
       cursor: pointer;
       font-weight: bold;
@@ -473,6 +458,19 @@ def load_hint(notebook, quest_id):
       padding: 10px;
       border: 1px solid #ccc;
       border-radius: 6px;
+    }
+
+    .hintbox ul {
+      padding-left: 20px;
+    }
+
+    /* Make list bullets magenta (not the text) */
+    .hintbox ul li {
+      list-style-type: disc;
+    }
+
+    .hintbox ul li::marker {
+      color: #ff00ff;
     }
     .hintbox code {
       background: #f5f5f5;

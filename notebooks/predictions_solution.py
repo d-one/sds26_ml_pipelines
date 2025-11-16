@@ -101,43 +101,6 @@ load_hint("predictions", "quest_2")
 
 # COMMAND ----------
 
- Quest 2 · Understanding the result
-You used the model to make predictions on the holdout dataset.
-
-1. What columns where added by the model?
-
-2. Could you explain what they are?
-
-Answer to question 1:
- 
-'Gender_idx',
-'Sleep_Quality_idx',
-'Stress_Level_idx',
-'Health_Issues_idx',
-'Occupation_idx',
-'Breakfast_Type_idx',
-'Gender_ohe',
-'Sleep_Quality_ohe',
-'Stress_Level_ohe',
-'Health_Issues_ohe',
-'Occupation_ohe',
-'Breakfast_Type_ohe',
-'features',
-'rawPrediction',
-'prediction',
-'probability'
- 
-
-Answer to question 2:
-The "_idx" columns are the columns that the Indexers create, and they are used as input in the one-hot encoders.
-The "_ohe" columns are the vectorized columns that the One-Hot Encoders create, and they are used as input in the assembler.
-The "features" column is the vectorized features that the Assembler creates, and it is used to train the model.
-The "rawPrediction" column is the raw margin values that the classifier outputs.
-The "prediction" column is the binarized predicted value.
-The "probability" column is the probability for each of the available classes.
-
-# COMMAND ----------
-
 predictions_df.display()
 
 # COMMAND ----------
