@@ -1,7 +1,11 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Coffee Module 06 · Prediction Simulation
-# MAGIC This module now reads the production holdout created in Module 01 and scores it directly with the registered XGBoost model. Fill in the `...` placeholders in each quest before running the cell.
+# MAGIC # Predictions in Production
+# MAGIC
+# MAGIC In this notebook, the goal is to:
+# MAGIC 1. Load the registered model
+# MAGIC 2. Use it to make predictions on unseen data
+# MAGIC 3. Evaluate its performance
 
 # COMMAND ----------
 
@@ -21,107 +25,129 @@ from mlflow import MlflowClient
 
 # COMMAND ----------
 
-# DBTITLE 1,Constants
-HOLDOUT_TABLE_PATH = f"{CATALOG}.{MY_SCHEMA}.coffee_prod_holdout"
-PREDICTIONS_TABLE_PATH = f"{CATALOG}.{MY_SCHEMA}.coffee_prod_predictions"
+# DBTITLE 1,Experiment setup
+# Experiment name
+MLFLOW_EXPERIMENT_NAME = f"/Workspace/Users/{USER_EMAIL}/coffee_prod_predictions"
 
-PRIMARY_KEY_COL = "ID"
-TIMESTAMP_COL = "Timestamp"
-LABEL_COL = "Coffee_Intake_Binary"
-PREDICTION_COLUMN = "prediction"
-KEY_COLUMNS = [PRIMARY_KEY_COL, TIMESTAMP_COL]
-
-MODEL_NAME = "coffee_xgb_model"
-MODEL_PATH = f"{CATALOG}.{MY_SCHEMA}.{MODEL_NAME}"
-CHAMPION_MODEL_URI = f"models:/{MODEL_PATH}@champion"
-MLFLOW_EXPERIMENT_NAME = (
-    f"/Workspace/Users/{USER_EMAIL}/coffee_prod_predictions"
-)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## Quest 1 · Configure MLflow and Load the Holdout
-# MAGIC **Goal:** point MLflow to Unity Catalog, ensure the experiment exists, and load the holdout DataFrame.
-# MAGIC
-# MAGIC **Hints**
-# MAGIC - Replace the `...` inside `mlflow.set_registry_uri("...")` with `"databricks-uc"`.
-# MAGIC - Fill the `spark.table(...)` placeholder with `HOLDOUT_TABLE_PATH` and print the resulting count.
-
-# COMMAND ----------
-
-mlflow.set_registry_uri("...")                                                 # replace placeholder
+# Disable autologging (because it can create extra experiments when fitting models in final run)
 mlflow.autolog(disable=True)
 
 exp = mlflow.get_experiment_by_name(MLFLOW_EXPERIMENT_NAME)
 if exp is None:
+    # If it doesn't exist, create it
     exp_id = mlflow.create_experiment(MLFLOW_EXPERIMENT_NAME)
-else:
-    exp_id = exp.experiment_id
+
 mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
 
-holdout_df = spark.table(...)                                                  # replace placeholder
-holdout_count = holdout_df.count()
-print(f"Loaded holdout table with {holdout_count:,} rows.")
+# COMMAND ----------
+
+# DBTITLE 1,Load Holdout table
+HOLDOUT_TABLE_PATH = f"{CATALOG}.{SCHEMA_WITH_SOURCE_DATA}.coffee_prod_holdout"
+holdout_df = spark.table(HOLDOUT_TABLE_PATH)
+print(f"Loaded holdout table with {holdout_df.count():,} rows.")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Quest 2 · Score the Holdout
-# MAGIC **Goal:** load the champion model and generate predictions in Spark.
-# MAGIC
-# MAGIC **Hints**
-# MAGIC - Swap the `...` in `mlflow.spark.load_model(...)` with `CHAMPION_MODEL_URI`.
-# MAGIC - Predict the `holdout_df`
-
-# COMMAND ----------
-
-spark_model = mlflow.spark.load_model(...)                                      # replace placeholders
-predictions_df = spark_model.transform(...)
-display(predictions_df.select(*KEY_COLUMNS, PREDICTION_COLUMN).limit(10))
+# MAGIC ## Predictions & Evaluation
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Quest 3 · Log the MLflow Evaluation
-# MAGIC **Goal:** run `mlflow.models.evaluate` on the champion model using the holdout features and labels.
+# MAGIC ### Quest 1 · Load the model
 # MAGIC
-# MAGIC **Hints**
-# MAGIC - Fill the alias placeholder with `"champion"` when calling `get_model_version_by_alias`.
-# MAGIC - Reuse `CHAMPION_MODEL_URI` and the holdout DataFrame inside `mlflow.models.evaluate`.
+# MAGIC It is time to load the model that we trained in the previous notebook and use it to make predictions on unseen data!
+# MAGIC
+# MAGIC Can you complete the missing alias to load the model?
+# MAGIC
+# MAGIC [Databricks Documentation for Model Aliases](https://docs.databricks.com/aws/en/machine-learning/manage-model-lifecycle/#use-model-aliases)
+# MAGIC
 
 # COMMAND ----------
 
+# DBTITLE 1,Load hint for Quest 1
+load_hint("predictions", "quest_1")
+
+# COMMAND ----------
+
+# DBTITLE 1,Load the model
+MODEL_PATH = f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model"
+alias = .......  # Replace with the alias of the model
+CHAMPION_MODEL_URI = f"models:/{MODEL_PATH}{alias}"
+
+model = mlflow.spark.load_model(CHAMPION_MODEL_URI)
+
+# COMMAND ----------
+
+# DBTITLE 1,Get predictions
+predictions_df = model.transform(holdout_df)
+display(predictions_df.limit(10))
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Quest 2 · Understanding the result
+# MAGIC
+# MAGIC You used the model to make predictions on the holdout dataset.
+# MAGIC
+# MAGIC **1.** What columns where added by the model?
+# MAGIC
+# MAGIC **2.** Could you explain what they are?
+# MAGIC
+
+# COMMAND ----------
+
+# DBTITLE 1,Load hint for Quest 2
+load_hint("predictions", "quest_2")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Quest 3 · Evaluate the model's performance with mlflow
+# MAGIC
+# MAGIC Run the following cells and answer the questions:
+# MAGIC
+# MAGIC 1. Where are the results logged?
+# MAGIC
+# MAGIC 2. Which metrics where logged?
+# MAGIC
+
+# COMMAND ----------
+
+# DBTITLE 1,Load hint for Quest 3
+load_hint("predictions", "quest_3")
+
+# COMMAND ----------
+
+# DBTITLE 1,mlflow evaluation
 client = MlflowClient()
-version = client.get_model_version_by_alias(name=MODEL_PATH, alias="...")        # replace placeholder
-run_name = f"{MODEL_NAME}_v{version.version}_evaluation"
 
+version = client.get_model_version_by_alias(name=MODEL_PATH, alias="champion")
+
+run_name = f"coffee_xgb_model_v{version.version}_evaluation"
+
+# Log the baseline model to MLflow
 with mlflow.start_run(run_name=run_name) as run:
-    results = mlflow.models.evaluate(                                            # replace placeholders
-        ...,  # model uri
-        ...,  # df to be evaluated
-        targets=LABEL_COL,
+
+    # Evaluate the logged model
+    results = mlflow.models.evaluate(
+        CHAMPION_MODEL_URI,
+        holdout_df,
+        targets="Coffee_Intake_Binary",
         model_type="classifier",
         evaluators=["default"],
-        evaluator_config={"default": {"pos_label": 0}},
+        evaluator_config={"default": {"pos_label": 0}}
     )
 
-print(f"\nResults saved in {MLFLOW_EXPERIMENT_NAME}, to run {run_name} :")
-for key, value in results.metrics.items():
-    print(f"\t{key}: {round(value, 2)}")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Quest 4 · Persist the Predictions
-# MAGIC **Goal:** save `predictions_df` to Unity Catalog for downstream reporting.
+# MAGIC ## Save predictions
 
 # COMMAND ----------
 
-# DBTITLE 1,Persist predictions
-predictions_df.write.format("delta").mode("overwrite").option(
-    "overwriteSchema", "true"
-).saveAsTable(PREDICTIONS_TABLE_PATH)
-print(
-    f"DataFrame predictions_df has been written to table:\n\t- {PREDICTIONS_TABLE_PATH}"
-)
+# DBTITLE 1,Save predictions table
+PREDICTIONS_TABLE_PATH = f"{CATALOG}.{MY_SCHEMA}.coffee_predictions"
+predictions_df.write.format("delta").mode("overwrite").saveAsTable(PREDICTIONS_TABLE_PATH)
+print(f"DataFrame predictions_df has been written to table:\n\t- {PREDICTIONS_TABLE_PATH}")

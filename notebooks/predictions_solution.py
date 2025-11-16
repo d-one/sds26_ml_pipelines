@@ -1,11 +1,11 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Simulation of predictions in production
+# MAGIC # Predictions in Production
 # MAGIC
-# MAGIC This notebook:
-# MAGIC 1. Loads the time-based scoring holdout prepared in `03_feature_store`.
-# MAGIC 2. Simulates receiving fresh entity keys and performs Feature Store lookups.
-# MAGIC 3. Scores the holdout rows with the registered XGBoost model and optionally evaluates performance.
+# MAGIC In this notebook, the goal is to:
+# MAGIC 1. Load the registered model
+# MAGIC 2. Use it to make predictions on unseen data
+# MAGIC 3. Evaluate its performance
 
 # COMMAND ----------
 
@@ -53,26 +53,73 @@ print(f"Loaded holdout table with {holdout_df.count():,} rows.")
 
 # COMMAND ----------
 
-# DBTITLE 1,Get predictions
-# Load Spark pipeline **on the driver** and score with transform (no UDF)
+# MAGIC %md
+# MAGIC ### Quest 1 · Load the model
+# MAGIC
+# MAGIC It is time to load the model that we trained in the previous notebook and use it to make predictions on unseen data!
+# MAGIC
+# MAGIC Can you complete the missing alias to load the model?
+# MAGIC
+# MAGIC [Databricks Documentation for Model Aliases](https://docs.databricks.com/aws/en/machine-learning/manage-model-lifecycle/#use-model-aliases)
+# MAGIC
+
+# COMMAND ----------
+
+# DBTITLE 1,Load hint for Quest 1
+load_hint("predictions", "quest_1")
+
+# COMMAND ----------
+
+# DBTITLE 1,Load the model
 MODEL_PATH = f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model"
-CHAMPION_MODEL_URI = f"models:/{MODEL_PATH}@champion"
+alias = "@champion"  # The 'champion' tag is assigned to the best model
+CHAMPION_MODEL_URI = f"models:/{MODEL_PATH}{alias}"
 
-spark_model = mlflow.spark.load_model(CHAMPION_MODEL_URI)
-predictions_df = spark_model.transform(holdout_df)
+model = mlflow.spark.load_model(CHAMPION_MODEL_URI)
 
+# COMMAND ----------
+
+# DBTITLE 1,Get predictions
+predictions_df = model.transform(holdout_df)
 display(predictions_df.limit(10))
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## What columns did the prediction generate? Can you explain what they are?
+# MAGIC ### Quest 2 · Understanding the result
 # MAGIC
-# MAGIC ### Code hint to show columns before, after, and explain results
+# MAGIC You used the model to make predictions on the holdout dataset.
+# MAGIC
+# MAGIC **1.** What columns where added by the model?
+# MAGIC
+# MAGIC **2.** Could you explain what they are?
+# MAGIC
 
 # COMMAND ----------
 
-# DBTITLE 1,MLFlow evaluation
+# DBTITLE 1,Load hint for Quest 2
+load_hint("predictions", "quest_2")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Quest 3 · Evaluate the model's performance with mlflow
+# MAGIC
+# MAGIC Run the following cells and answer the questions:
+# MAGIC
+# MAGIC 1. Where are the results logged?
+# MAGIC
+# MAGIC 2. Which metrics where logged?
+# MAGIC
+
+# COMMAND ----------
+
+# DBTITLE 1,Load hint for Quest 3
+load_hint("predictions", "quest_3")
+
+# COMMAND ----------
+
+# DBTITLE 1,mlflow evaluation
 client = MlflowClient()
 
 version = client.get_model_version_by_alias(name=MODEL_PATH, alias="champion")
@@ -92,11 +139,6 @@ with mlflow.start_run(run_name=run_name) as run:
         evaluator_config={"default": {"pos_label": 0}}
     )
 
-print("\n\n\n")
-print("-" * 100)
-print(f"Results saved in {MLFLOW_EXPERIMENT_NAME}, in Run {run_name} :")
-for key, value in results.metrics.items():
-    print(f"\t{key}: {round(value, 2)}")
 
 # COMMAND ----------
 
@@ -105,7 +147,7 @@ for key, value in results.metrics.items():
 
 # COMMAND ----------
 
-# DBTITLE 1,Save predictions
+# DBTITLE 1,Save predictions table
 PREDICTIONS_TABLE_PATH = f"{CATALOG}.{MY_SCHEMA}.coffee_predictions"
 predictions_df.write.format("delta").mode("overwrite").saveAsTable(PREDICTIONS_TABLE_PATH)
 print(f"DataFrame predictions_df has been written to table:\n\t- {PREDICTIONS_TABLE_PATH}")
