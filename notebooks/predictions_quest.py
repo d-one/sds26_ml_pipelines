@@ -97,6 +97,11 @@ display(predictions_df.limit(10))
 
 # COMMAND ----------
 
+# DBTITLE 1,Load hint for Quest 2
+load_hint("predictions", "quest_2")
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ### Quest 3 · Evaluate the model's performance with mlflow
 # MAGIC
@@ -104,21 +109,13 @@ display(predictions_df.limit(10))
 # MAGIC
 # MAGIC 1. Where are the results logged?
 # MAGIC
+# MAGIC 2. Which metrics where logged?
 # MAGIC
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC Performance Metrics
-# MAGIC 📊 Classification: Accuracy, precision, recall, F1-score, ROC-AUC, confusion matrices
-# MAGIC 📈 Regression: MAE, MSE, RMSE, R², residual analysis, prediction vs actual plots
-# MAGIC 🎯 Custom Metrics: Domain-specific measures defined with simple Python functions
-# MAGIC Visual Diagnostics
-# MAGIC 📊 Performance Plots: ROC curves, precision-recall curves, calibration plots
-# MAGIC 📈 Feature Importance: SHAP values, permutation importance, feature interactions
-# MAGIC Model Explanations
-# MAGIC 🧠 Global Explanations: Overall model behavior and feature contributions (with shap)
-# MAGIC 🔍 Local Explanations: Individual prediction explanations and decision paths (with shap)
+# DBTITLE 1,Load hint for Quest 3
+load_hint("predictions", "quest_3")
 
 # COMMAND ----------
 
@@ -142,11 +139,6 @@ with mlflow.start_run(run_name=run_name) as run:
         evaluator_config={"default": {"pos_label": 0}}
     )
 
-print("\n\n\n")
-print("-" * 100)
-print(f"Results saved in {MLFLOW_EXPERIMENT_NAME}, in Run {run_name} :")
-for key, value in results.metrics.items():
-    print(f"\t{key}: {round(value, 2)}")
 
 # COMMAND ----------
 

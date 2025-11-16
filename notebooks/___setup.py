@@ -388,52 +388,76 @@ def clean_all() -> None:
 # DBTITLE 1,HINTS
 HINTS = {
     ("predictions", "quest_1"): """
-<details class="hintbox">
-  <summary>Show me the code hint!</summary>
-  <pre><code>spark.table(FEATURE_TABLE_PATH)</code></pre>
-</details>
-""",
+        <details class="hintbox">
+          <summary>Show me the code hint!</summary>
+          <pre><code>alias = "@champion"</code></pre>
+        </details>
+        """,
 
     ("predictions", "quest_2"): """
-    <details class="hintbox">
-      <summary>Show me the hint!</summary>
+        <details class="hintbox">
+          <summary>Show me the hint!</summary>
 
-      <p><strong>Answer to Question 1:<br>
-      These columns were added by the model:</strong></p>
+          <p class="answer"><strong>Answer to Question 1</strong></p>
+          <p>These columns were added by the model:</p>
+          <ul>
+            <li>Gender_idx</li>
+            <li>Sleep_Quality_idx</li>
+            <li>Stress_Level_idx</li>
+            <li>Health_Issues_idx</li>
+            <li>Occupation_idx</li>
+            <li>Breakfast_Type_idx</li>
+            <li>Gender_ohe</li>
+            <li>Sleep_Quality_ohe</li>
+            <li>Stress_Level_ohe</li>
+            <li>Health_Issues_ohe</li>
+            <li>Occupation_ohe</li>
+            <li>Breakfast_Type_ohe</li>
+            <li>features</li>
+            <li>rawPrediction</li>
+            <li>prediction</li>
+            <li>probability</li>
+          </ul>
 
-      <ul>
-        <li>Gender_idx</li>
-        <li>Sleep_Quality_idx</li>
-        <li>Stress_Level_idx</li>
-        <li>Health_Issues_idx</li>
-        <li>Occupation_idx</li>
-        <li>Breakfast_Type_idx</li>
-        <li>Gender_ohe</li>
-        <li>Sleep_Quality_ohe</li>
-        <li>Stress_Level_ohe</li>
-        <li>Health_Issues_ohe</li>
-        <li>Occupation_ohe</li>
-        <li>Breakfast_Type_ohe</li>
-        <li>features</li>
-        <li>rawPrediction</li>
-        <li>prediction</li>
-        <li>probability</li>
-      </ul>
+          <p class="answer"><strong>Answer to Question 2</strong></p>
+          <p>What these columns represent:</p>
 
-      <p><strong>Answer to Question 2:<br>
-      What these columns represent:</strong></p>
+          <ul>
+            <li><strong>“_idx” columns:</strong> Numeric category indices created by <em>StringIndexer</em>, used as inputs to the OneHotEncoder.</li>
+            <li><strong>“_ohe” columns:</strong> One-hot encoded vectors produced by <em>OneHotEncoder</em>, used as inputs by the VectorAssembler.</li>
+            <li><strong>“features”:</strong> Final feature vector assembled by <em>VectorAssembler</em> and used to train the model.</li>
+            <li><strong>“rawPrediction”:</strong> Raw model output scores (margins) for each class.</li>
+            <li><strong>“prediction”:</strong> Final predicted class label.</li>
+            <li><strong>“probability”:</strong> Probability distribution across all classes.</li>
+          </ul>
 
-      <ul>
-        <li><strong>“_idx” columns:</strong> Numeric category indices created by <em>StringIndexer</em>, used as inputs to the OneHotEncoder.</li>
-        <li><strong>“_ohe” columns:</strong> One-hot encoded vectors produced by <em>OneHotEncoder</em>, used as inputs by the VectorAssembler.</li>
-        <li><strong>“features”:</strong> Final feature vector assembled by <em>VectorAssembler</em> and used to train the model.</li>
-        <li><strong>“rawPrediction”:</strong> Raw model output scores (margins) for each class.</li>
-        <li><strong>“prediction”:</strong> Final predicted class label.</li>
-        <li><strong>“probability”:</strong> Probability distribution across all classes.</li>
-      </ul>
+        </details>
+        """,
+      ("predictions", "quest_3"): """
+          <details class="hintbox">
+            <summary>Show me the hint!</summary>
 
-    </details>
-    """
+            <p class="answer"><strong>Answer to Question 1</strong></p>
+            <p>When you run the following code, MLflow creates the output:</p>
+            <p><code>Logged 1 run to an experiment in MLflow.</code></p>
+            <p>The "run" and "experiment" are links to the corresponding resources. Clicking on them will take you to the Experiments page where you can see the results.</p>
+
+            <p class="answer"><strong>Answer to Question 2</strong></p>
+            <p>The metrics that were logged for evaluating the model are:</p>
+            <ul>
+              <li>true_negatives</li>
+              <li>false_positives</li>
+              <li>false_negatives</li>
+              <li>true_positives</li>
+              <li>example_count</li>
+              <li>accuracy_score</li>
+              <li>recall_score</li>
+              <li>precision_score</li>
+              <li>f1_score</li>
+            </ul>
+
+          </details>
+          """
 }
 
 # COMMAND ----------
@@ -444,9 +468,8 @@ def load_hint(notebook, quest_id):
     <style>
 
     * {
-      font-size: 12px;
+      font-size: 16px;
     }
-
 
     .hintbox summary {
       cursor: pointer;
@@ -456,7 +479,7 @@ def load_hint(notebook, quest_id):
     .hintbox {
       margin: 10px 0;
       padding: 10px;
-      border: 1px solid #ccc;
+      border: 1px solid #ff00ff;
       border-radius: 6px;
     }
 
@@ -479,6 +502,13 @@ def load_hint(notebook, quest_id):
       border-radius: 4px;
       white-space: pre;
     }
+
+    /* New magenta paragraph class */
+    .answer {
+      color: #ff00ff;
+      text-decoration: underline;
+    }
+
     </style>
     """
 
