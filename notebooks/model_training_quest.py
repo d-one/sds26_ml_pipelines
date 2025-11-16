@@ -402,18 +402,18 @@ print("Final XGBoost model trained on full dataset and logged to MLflow.")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Bonus!
+# MAGIC ## Quest 7 · A Duel?!
 # MAGIC
 # MAGIC Now you have a model registered with the `"champion"` alias.
 # MAGIC
-# MAGIC Suppose new data comes in, in the form of `test_df`. How would you handle the logging a new model?
+# MAGIC Suppose new data comes in, in the form of `test_df`. How would you handle the logging a new model, the `"challenger"`?
 # MAGIC
 # MAGIC You can **use the previous cell's logic**, but what would you change?
 # MAGIC
-# MAGIC You do not need to use mlflow to log metrics and set tags for this task (lines 28-44 in previous cell).
+# MAGIC You do not need to use mlflow to log metrics and set tags for this task (lines `28-44` in previous cell).
 # MAGIC
 # MAGIC **Hints**
-# MAGIC - It can be done with the addition of just one line with conditional logic
+# MAGIC - It could be done with the addition of just one line with conditional logic
 # MAGIC - It has to do with aliases
 
 # COMMAND ----------
@@ -471,3 +471,9 @@ with mlflow.start_run(run_name="coffee_xgb_best") as run:
     champion_version = versions[0].version
 
     # TODO: Write promotion logic with aliases below
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Bonus question!
+# MAGIC Would you do anything different about the training of our final model?...
