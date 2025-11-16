@@ -47,6 +47,9 @@ UC_MODEL_NAME = f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model"
 # MAGIC %md
 # MAGIC ## Quest 1 · Define Feature Categories
 # MAGIC **Goal:** detect numeric and categorical columns from the labeled dataset.
+# MAGIC - Inspect the results.
+# MAGIC - Are the contents of the variable lists accurate?
+# MAGIC - Would you change anything?
 # MAGIC
 # MAGIC Need a nudge? Use the hint loader below.
 
@@ -120,6 +123,8 @@ full_labeled_df = training_set.load_df()
 # MAGIC ## Quest 3 · Configure Splits, Pipeline, and MLflow
 # MAGIC **Goal:** create data splits, build preprocessing stages, and configure the MLflow experiment.
 # MAGIC
+# MAGIC What do you thing is a good split?
+# MAGIC
 # MAGIC Need a nudge? Use the hint loader below.
 
 # COMMAND ----------
@@ -171,7 +176,7 @@ mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
 # MAGIC ## Quest 4 · Execute the Optuna Study
 # MAGIC **Goal:** run Optuna with a head start!
 # MAGIC
-# MAGIC Need a nudge? Use the hint loader below.
+# MAGIC What starting parameters should we use, if any at all? How would you decide?
 
 # COMMAND ----------
 
@@ -425,10 +430,10 @@ print("Final XGBoost model trained on full dataset and logged to MLflow.")
 # MAGIC You can **use the previous cell's logic**, but what would you change?
 # MAGIC
 # MAGIC You do not need to use mlflow to log metrics and set tags for this task (lines `28-44` in previous cell).
-# MAGIC
-# MAGIC **Hints**
-# MAGIC - It could be done with the addition of just one line with conditional logic
-# MAGIC - It has to do with aliases
+
+# COMMAND ----------
+
+load_hint("model_training", "quest_7")
 
 # COMMAND ----------
 

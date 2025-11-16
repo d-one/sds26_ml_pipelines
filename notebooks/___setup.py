@@ -462,12 +462,19 @@ HINTS = {
     ("model_training", "quest_1"): """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
-          <p>Inspect the Spark schema and the helper prints to confirm the detected columns.</p>
           <ul>
-            <li>Numeric columns should include integer/float/double/long types other than the base columns (`Coffee_Intake_Binary`, `ID`, `Timestamp`).</li>
-            <li>Categorical columns should be strings that are not part of the base columns.</li>
-            <li>If a column looks misplaced, adjust the list comprehension filters accordingly.</li>
+            <li>Look at the columns: <code><span class="string">"Alcohol_Consumption"</span></code>  and <code><span class="string">"Smoking"</span></code></li>
+            <li>Do they look like numeric columns?</li>
           </ul>
+        </details>
+        <details class="hintbox">
+          <summary>Just show me the answer… 🫠</summary>
+          <p>Run this block of code before moving on:</p>
+          <div class="code-block">
+            <span class="variable">numeric_cols</span><span class="operator">.</span><span class="function">remove</span><span class="bracket">(</span><span class="string">"Alcohol_Consumption"</span><span class="bracket">)<br></span>
+            <span class="variable">numeric_cols</span><span class="operator">.</span><span class="function">remove</span><span class="bracket">(</span><span class="string">"Smoking"</span><span class="bracket">)<br></span>
+            <span class="variable">categorical_cols</span> <span class="operator">+=</span> <span class="bracket">[</span><span class="string">"Alcohol_Consumption"</span><span class="operator">,</span> <span class="string">"Smoking"</span><span class="bracket">]</span>
+          </div>
         </details>
         """,
 
@@ -475,11 +482,8 @@ HINTS = {
         <details class="hintbox">
           <summary>Show me the hint!</summary>
           <p>Reuse the feature lists you derived in Quest 1.</p>
-          <ul>
-            <li>Pass the `all_feature_cols` list into <code>feature_names=...</code> so the Feature Store lookup returns every feature.</li>
-            <li>Wrap <code>feature_lookup</code> inside the <code>feature_lookups</code> argument: <code>feature_lookups=[feature_lookup]</code>.</li>
-          </ul>
         </details>
+
         """,
 
     ("model_training", "quest_3"): """
@@ -504,14 +508,34 @@ HINTS = {
         </details>
         """,
 
-    ("model_training", "quest_5"): """
+    ("model_training", "quest_7"): """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
           <ul>
-            <li>Create <code>train_val_df = train_df.unionByName(valid_df)</code> to combine the splits.</li>
-            <li>Fit the tuned pipeline on <code>train_val_df</code>: <code>best_model = best_pipeline.fit(train_val_df)</code>.</li>
-            <li>Score the hold-out set with <code>best_model.transform(test_df)</code> before computing metrics and feature importances.</li>
+            <li>It could be done with the addition of just one line with conditional logic</li>
+            <li>There is no room for two champions...⚔️ </li>
           </ul>
+        </details>
+        <details class="hintbox">
+          <summary>Just show me the answer… 🫠</summary>
+          <p>You could just promote the challenger if it is better than the champion:</p>
+          <div class="code-block">
+            <pre><span class="keyword">if</span> <span class="variable">challenger_f1</span> <span class="operator">&gt;</span> <span class="variable">champion_f1</span><span class="operator">:</span>
+            <span class="comment"># This automatically removes the champion alias from the previous version</span>
+            <span class="variable">client</span><span class="operator">.</span><span class="function">set_registered_model_alias</span><span class="bracket">(</span>
+                <span class="variable">UC_MODEL_NAME</span><span class="operator">,</span> <span class="string">"champion"</span><span class="operator">,</span> <span class="variable">challenger_version</span>
+            <span class="bracket">)</span>
+          </div>
+          <p>Or you could also alias the previous champion:
+          <div class="code-block">
+            <span class="comment"># Mark the previous champion optionally</span>
+            <span class="variable">client</span><span class="operator">.</span><span class="function">set_registered_model_alias</span><span class="bracket">(</span>
+                <span class="variable">UC_MODEL_NAME</span><span class="operator">,</span> <span class="string">"previous_champion"</span><span class="operator">,</span> <span class="variable">champion_version</span>
+            <span class="bracket">)</span>
+            <span class="function">print</span><span class="bracket">(</span><span class="string">f"Challenger wins! Model version {challenger_version} is now the new champion."</span><span class="bracket">)</span></pre>
+            <pre><span class="keyword">else</span><span class="operator">:</span>
+            <span class="function">print</span><span class="bracket">(</span><span class="string">f"Champion wins! Model version {champion_version} remains the champion."</span><span class="bracket">)</span></pre>
+          </div>
         </details>
         """
 }
@@ -565,6 +589,51 @@ def load_hint(notebook, quest_id):
       text-decoration: underline;
     }
 
+    /* Code block styling */
+    .code-block {
+      background: #f0f0f0;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 10px 0;
+      overflow-x: auto;
+    }
+
+    .code-block pre {
+      margin: 0;
+      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #5c5c5c;
+    }
+
+    .comment {
+        color: #008000;
+        font-weight: bold;
+    }
+
+    .keyword {
+        color: #0000ff;
+    }
+
+    .function {
+        color: #795e26;
+    }
+
+    .string {
+        color: #c72e0f;
+    }
+
+    .variable {
+        color: #5c5c5c;
+    }
+
+    .operator {
+        color: #5c5c5c;
+    }
+
+    .bracket {
+        color: #0000ff;
+    }
     </style>
     """
 
