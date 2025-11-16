@@ -49,12 +49,7 @@ print(f"Loaded holdout table with {holdout_df.count():,} rows.")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Predictions & Evaluation
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### Quest 1 · Load the model
+# MAGIC ## Quest 1 · Load the model
 # MAGIC
 # MAGIC It is time to load the model that we trained in the previous notebook and use it to make predictions on unseen data!
 # MAGIC
@@ -86,7 +81,7 @@ display(predictions_df.limit(10))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Quest 2 · Understanding the result
+# MAGIC ## Quest 2 · Understanding the result
 # MAGIC
 # MAGIC You used the model to make predictions on the holdout dataset.
 # MAGIC
@@ -103,7 +98,7 @@ load_hint("predictions", "quest_2")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Quest 3 · Evaluate the model's performance with mlflow
+# MAGIC ## Quest 3 · Evaluate the model's performance with mlflow
 # MAGIC
 # MAGIC Run the following cells and answer the questions:
 # MAGIC

@@ -388,22 +388,46 @@ def clean_all() -> None:
 
 # DBTITLE 1,HINTS
 HINTS = {
-    (
-        "predictions",
-        "quest_1",
-    ): """
+    ("predictions","quest_1",): 
+      """
         <details class="hintbox">
-          <summary>Show me the code hint!</summary>
+          <summary>Show me the hint!</summary>
+          <p>If you navigate to Catalog > gtc25_ml_catalog > gtc2025_(your_user_number) > Models and click on the coffee_xgb_model, you will see the alias of the latest version of the model.</p>
+        </details>
+        <details class="hintbox">
+          <summary>Just show me the answer… 🫠</summary>
           <pre><code>alias = "@champion"</code></pre>
         </details>
         """,
-    (
-        "predictions",
-        "quest_2",
-    ): """
+    ("predictions","quest_2",):
+      """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
-
+          <p class="answer"><strong>Hint for Question 1</strong></p>
+          <p>Use the following commands and try to identify the extra columns</p>
+          <pre>
+            <code>
+            print(predictions_df.columns)
+            print(holdout_df.columns)
+            </code>
+          </pre>
+          <p class="answer"><strong>Hint for Question 2</strong></p>
+          <p>Use the following command to see a sample of the data</p>
+          <pre>
+            <code>
+            holdout_df.display()
+            </code>
+          </pre>
+          <p>Additional reading</p>
+          <ul>
+            <li><a href="https://spark.apache.org/docs/latest/ml-features.html#stringindexer">StringIndexer</a></li>
+            <li><a href="https://spark.apache.org/docs/latest/ml-features.html#onehotencoder">OneHotEncoder</a></li>
+            <li><a href="https://spark.apache.org/docs/latest/ml-features.html#vectorassembler">VectorAssembler</a></li>
+            <li><a href="https://xgboost.readthedocs.io/en/stable/tutorials/spark_estimator.html#sparkxgbclassifier">SparkXGBClassifier</a></li>
+          </ul>
+        </details>
+        <details class="hintbox">
+          <summary>Just show me the answer… 🫠</summary>
           <p class="answer"><strong>Answer to Question 1</strong></p>
           <p>These columns were added by the model:</p>
           <ul>
@@ -616,6 +640,10 @@ HINTS = {
 
 # COMMAND ----------
 
+
+
+# COMMAND ----------
+
 # DBTITLE 1,load_hint
 
 def load_hint(notebook, quest_id):
@@ -718,3 +746,7 @@ def load_hint(notebook, quest_id):
         return
 
     displayHTML(base_css + body)
+
+# COMMAND ----------
+
+load_hint("predictions", "quest_2")
