@@ -489,22 +489,64 @@ HINTS = {
     ("model_training", "quest_3"): """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
-          <p><code>randomSplit</code> takes a list of floats that sum to 1.</p>
-          <ul>
-            <li>Think of the classic <code>[0.7, 0.2, 0.1]</code> (or any split you prefer) for train/validation/test.</li>
-            <li>Keep the provided seed for reproducibility.</li>
-            <li>After splitting, review the row counts to validate the distribution.</li>
-          </ul>
+          <p>Use three float numbers in the placeholder list.</p>
+        </details>
+        <details class="hintbox">
+          <summary>Just show me the answer… 🫠</summary>
+          <pre><code>train_df, valid_df, test_df = full_labeled_df.randomSplit(
+    [0.6, 0.2, 0.2], seed=42
+)</code></pre>
         </details>
         """,
 
     ("model_training", "quest_4"): """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
+          <p>Review the AutoML experiment: <a href="https://adb-1451829595406012.12.azuredatabricks.net/ml/experiments/1514058481528333?o=1451829595406012" target="_blank">Coffee AutoML run</a>.</p>
+        </details>
+        <details class="hintbox">
+          <summary>Just show me the answer… 🫠</summary>
+          <pre><code>seed_params = {
+    "eta": 0.05759496965676729,
+    "colsample_bytree": 0.6263993741226758,
+    "max_depth": 9,
+    "min_child_weight": 5.0,
+    "subsample": 0.6616262667209235,
+}</code></pre>
+        </details>
+        """,
+
+    ("model_training", "quest_5"): """
+        <details class="hintbox">
+          <summary>Show me the hint!</summary>
           <ul>
-            <li>Call <code>study.enqueue_trial(seed_params, skip_if_exists=True)</code> right before <code>study.optimize(...)</code> to seed Optuna with your AutoML parameters.</li>
-            <li>Need inspiration for the seed values? Review the AutoML experiment: <a href="https://adb-1451829595406012.12.azuredatabricks.net/ml/experiments/1514058481528333?o=1451829595406012" target="_blank">Coffee AutoML run</a>.</li>
+            <li>Extend the training set with what we used for validating hyperparameters.</li>
+            <li><code>fit</code> trains the model.</li>
+            <li><code>transform</code> makes predictions to test the model.</li>
           </ul>
+        </details>
+        <details class="hintbox">
+          <summary>Just show me the answer… 🫠</summary>
+          <pre><code>train_val_df = train_df.unionByName(valid_df) #TODO replace placeholder
+print(f"Train + validation rows: {train_val_df.count():,}")
+
+best_model = best_pipeline.fit(train_val_df)  #TODO replace placeholder
+
+test_pred_df = best_model.transform(test_df)  #TODO replace placeholder
+test_prec0, test_rec0, test_f10 = class_zero_metrics(
+    test_pred_df, LABEL_COL, PREDICTION_COL
+)</code></pre>
+        </details>
+        """,
+
+    ("model_training", "quest_6"): """
+        <details class="hintbox">
+          <summary>Show me the hint!</summary>
+          <p>Take a break! Just run the cell!</p>
+        </details>
+        <details class="hintbox">
+          <summary>Just show me the answer… 🫠</summary>
+          <p>Seriously, just run it 🚀</p>
         </details>
         """,
 
