@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Coffee Module 05 · Training the model
+# MAGIC # Training & Registering the model
 # MAGIC Time to train and register the model! Work through the refreshed Optuna + MLflow workflow in quest form. Replace every `...` placeholder with real code before executing each quest.
 
 # COMMAND ----------
@@ -55,6 +55,11 @@ UC_MODEL_NAME = f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model"
 
 # COMMAND ----------
 
+# DBTITLE 1,Load hint for Quest 1
+load_hint("model_training", "quest_1")
+
+# COMMAND ----------
+
 BASE_COLUMNS = ["Coffee_Intake_Binary", "ID", "Timestamp"]
 coffee_labeled_df = spark.table(f"{CATALOG}.{MY_SCHEMA}.coffee_labeled")
 data_schema_fields = coffee_labeled_df.schema.fields
@@ -97,6 +102,11 @@ categorical_cols += ["Alcohol_Consumption", "Smoking"]
 
 # COMMAND ----------
 
+# DBTITLE 1,Load hint for Quest 2
+load_hint("model_training", "quest_2")
+
+# COMMAND ----------
+
 fe = FeatureEngineeringClient()
 labeled_fact_df = spark.table(f"{CATALOG}.{MY_SCHEMA}.coffee_labeled_fact")
 
@@ -124,6 +134,11 @@ full_labeled_df = training_set.load_df()
 # MAGIC **Hints**
 # MAGIC - Use three float numbers to do the splitting. What do you think is a good split?
 # MAGIC
+
+# COMMAND ----------
+
+# DBTITLE 1,Load hint for Quest 3
+load_hint("model_training", "quest_3")
 
 # COMMAND ----------
 
@@ -172,6 +187,11 @@ mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
 # MAGIC **Hints**
 # MAGIC - You can use `study.enqueue_trial(seed_params, skip_if_exists=True)` before `study.optimize` to start from a specific set of hyperparameters.
 # MAGIC - AutoML experiment: https://adb-1451829595406012.12.azuredatabricks.net/ml/experiments/1514058481528333?o=1451829595406012
+
+# COMMAND ----------
+
+# DBTITLE 1,Load hint for Quest 4
+load_hint("model_training", "quest_4")
 
 # COMMAND ----------
 
@@ -301,6 +321,11 @@ best_pipeline = Pipeline(stages=[*STAGES, best_xgb])
 
 # COMMAND ----------
 
+# DBTITLE 1,Load hint for Quest 5
+load_hint("model_training", "quest_5")
+
+# COMMAND ----------
+
 train_val_df = train_df.unionByName(valid_df) #TODO replace placeholder
 print(f"Train + validation rows: {train_val_df.count():,}")
 
@@ -351,6 +376,11 @@ display(feature_importance_pdf)
 # MAGIC %md
 # MAGIC ## Quest 6 · Register the Final Model
 # MAGIC **Goal:** log artifacts to MLflow, and manage UC aliases.
+
+# COMMAND ----------
+
+# DBTITLE 1,Load hint for Quest 6
+load_hint("model_training", "quest_6")
 
 # COMMAND ----------
 
@@ -421,6 +451,11 @@ print("Final XGBoost model trained on full dataset and logged to MLflow.")
 # MAGIC **Hints**
 # MAGIC - It could be done with the addition of just one line with conditional logic
 # MAGIC - There can only be one `"champion"` among models ⚔️...
+
+# COMMAND ----------
+
+# DBTITLE 1,Load hint for Quest 7
+load_hint("model_training", "quest_7")
 
 # COMMAND ----------
 

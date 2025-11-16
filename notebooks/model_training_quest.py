@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Coffee Module 05 · Training the model
+# MAGIC # Training & Registering the model
 # MAGIC Time to train and register the model! Work through the refreshed Optuna + MLflow workflow in quest form. Replace every `...` placeholder with real code before executing each quest.
 
 # COMMAND ----------
@@ -366,6 +366,7 @@ display(feature_importance_pdf)
 
 # COMMAND ----------
 
+# DBTITLE 1,Load hint for Quest 6
 load_hint("model_training", "quest_6")
 
 # COMMAND ----------
@@ -437,6 +438,7 @@ print("Final XGBoost model trained on full dataset and logged to MLflow.")
 
 # COMMAND ----------
 
+# DBTITLE 1,Load hint for Quest 7
 load_hint("model_training", "quest_7")
 
 # COMMAND ----------
