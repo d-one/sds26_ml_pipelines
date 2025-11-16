@@ -402,7 +402,7 @@ print("Final XGBoost model trained on full dataset and logged to MLflow.")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## **Bonus!**
+# MAGIC ## Bonus!
 # MAGIC
 # MAGIC Now you have a model registered with the `"champion"` alias.
 # MAGIC
@@ -435,23 +435,23 @@ champion_precision, champion_recall, champion_f1 = class_zero_metrics(
     champion_predictions_df, LABEL_COL, PREDICTION_COL
 )
 
+# Train the Challenger model on the updated data
+challenger_model = best_pipeline.fit(updated_df)
+challenger_predictions_df = challenger_model.transform(
+    new_data_for_testing
+)
+
+# Evaluate the Challenger model on the new data
+challenger_precision, challenger_recall, challenger_f1 = (
+    class_zero_metrics(
+        challenger_predictions_df, LABEL_COL, PREDICTION_COL
+    )
+)
+
 # Log Challenger model
 with mlflow.start_run(run_name="coffee_xgb_best") as run:
 
-    challenger_model = best_pipeline.fit(updated_df)
-    challenger_predictions_df = challenger_model.transform(
-        new_data_for_testing
-    )
-    # Evaluate the Challenger model on the new data
-    challenger_precision, challenger_recall, challenger_f1 = (
-        class_zero_metrics(
-            challenger_predictions_df, LABEL_COL, PREDICTION_COL
-        )
-    )
-
-    sample_inf_df = updated_df.drop("Coffee_Intake_Binary").limit(
-        1
-    )
+    sample_inf_df = updated_df.drop("Coffee_Intake_Binary").limit(1)
     sample_pred_df = challenger_model.transform(sample_inf_df).select(
         sample_inf_df.columns + ["prediction"]
     )
