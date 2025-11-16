@@ -433,7 +433,7 @@ HINTS = {
 
         </details>
         """,
-      ("predictions", "quest_3"): """
+    ("predictions", "quest_3"): """
           <details class="hintbox">
             <summary>Show me the hint!</summary>
 
@@ -457,7 +457,63 @@ HINTS = {
             </ul>
 
           </details>
-          """
+          """,
+
+    ("model_training", "quest_1"): """
+        <details class="hintbox">
+          <summary>Show me the hint!</summary>
+          <p>Inspect the Spark schema and the helper prints to confirm the detected columns.</p>
+          <ul>
+            <li>Numeric columns should include integer/float/double/long types other than the base columns (`Coffee_Intake_Binary`, `ID`, `Timestamp`).</li>
+            <li>Categorical columns should be strings that are not part of the base columns.</li>
+            <li>If a column looks misplaced, adjust the list comprehension filters accordingly.</li>
+          </ul>
+        </details>
+        """,
+
+    ("model_training", "quest_2"): """
+        <details class="hintbox">
+          <summary>Show me the hint!</summary>
+          <p>Reuse the feature lists you derived in Quest 1.</p>
+          <ul>
+            <li>Pass the `all_feature_cols` list into <code>feature_names=...</code> so the Feature Store lookup returns every feature.</li>
+            <li>Wrap <code>feature_lookup</code> inside the <code>feature_lookups</code> argument: <code>feature_lookups=[feature_lookup]</code>.</li>
+          </ul>
+        </details>
+        """,
+
+    ("model_training", "quest_3"): """
+        <details class="hintbox">
+          <summary>Show me the hint!</summary>
+          <p><code>randomSplit</code> takes a list of floats that sum to 1.</p>
+          <ul>
+            <li>Think of the classic <code>[0.7, 0.2, 0.1]</code> (or any split you prefer) for train/validation/test.</li>
+            <li>Keep the provided seed for reproducibility.</li>
+            <li>After splitting, review the row counts to validate the distribution.</li>
+          </ul>
+        </details>
+        """,
+
+    ("model_training", "quest_4"): """
+        <details class="hintbox">
+          <summary>Show me the hint!</summary>
+          <ul>
+            <li>Call <code>study.enqueue_trial(seed_params, skip_if_exists=True)</code> right before <code>study.optimize(...)</code> to seed Optuna with your AutoML parameters.</li>
+            <li>Need inspiration for the seed values? Review the AutoML experiment: <a href="https://adb-1451829595406012.12.azuredatabricks.net/ml/experiments/1514058481528333?o=1451829595406012" target="_blank">Coffee AutoML run</a>.</li>
+          </ul>
+        </details>
+        """,
+
+    ("model_training", "quest_5"): """
+        <details class="hintbox">
+          <summary>Show me the hint!</summary>
+          <ul>
+            <li>Create <code>train_val_df = train_df.unionByName(valid_df)</code> to combine the splits.</li>
+            <li>Fit the tuned pipeline on <code>train_val_df</code>: <code>best_model = best_pipeline.fit(train_val_df)</code>.</li>
+            <li>Score the hold-out set with <code>best_model.transform(test_df)</code> before computing metrics and feature importances.</li>
+          </ul>
+        </details>
+        """
 }
 
 # COMMAND ----------
@@ -518,4 +574,3 @@ def load_hint(notebook, quest_id):
         return
 
     displayHTML(base_css + body)
-

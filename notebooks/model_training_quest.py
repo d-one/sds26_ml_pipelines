@@ -48,10 +48,12 @@ UC_MODEL_NAME = f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model"
 # MAGIC ## Quest 1 · Define Feature Categories
 # MAGIC **Goal:** detect numeric and categorical columns from the labeled dataset.
 # MAGIC
-# MAGIC **Hints**
-# MAGIC - Inspect the results.
-# MAGIC - Are the contents of the variable lists accurate?
-# MAGIC - Would you change anything?
+# MAGIC Need a nudge? Use the hint loader below.
+
+# COMMAND ----------
+
+# DBTITLE 1,Load hint for Quest 1
+load_hint("model_training", "quest_1")
 
 # COMMAND ----------
 
@@ -85,8 +87,12 @@ coffee_labeled_df.limit(10).display()
 # MAGIC ## Quest 2 · Prepare the Feature Store Training Set
 # MAGIC **Goal:** load the fact table and build a Feature Store training set that joins in features.
 # MAGIC
-# MAGIC **Hints**
-# MAGIC - Use the feature list you configured in the previous quest
+# MAGIC Need a nudge? Use the hint loader below.
+
+# COMMAND ----------
+
+# DBTITLE 1,Load hint for Quest 2
+load_hint("model_training", "quest_2")
 
 # COMMAND ----------
 
@@ -114,9 +120,12 @@ full_labeled_df = training_set.load_df()
 # MAGIC ## Quest 3 · Configure Splits, Pipeline, and MLflow
 # MAGIC **Goal:** create data splits, build preprocessing stages, and configure the MLflow experiment.
 # MAGIC
-# MAGIC **Hints**
-# MAGIC - Use three float numbers to do the splitting. What do you think is a good split?
-# MAGIC
+# MAGIC Need a nudge? Use the hint loader below.
+
+# COMMAND ----------
+
+# DBTITLE 1,Load hint for Quest 3
+load_hint("model_training", "quest_3")
 
 # COMMAND ----------
 
@@ -162,9 +171,12 @@ mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
 # MAGIC ## Quest 4 · Execute the Optuna Study
 # MAGIC **Goal:** run Optuna with a head start!
 # MAGIC
-# MAGIC **Hints**
-# MAGIC - You can use `study.enqueue_trial(seed_params, skip_if_exists=True)` before `study.optimize` to start from a specific set of hyperparameters.
-# MAGIC - AutoML experiment: https://adb-1451829595406012.12.azuredatabricks.net/ml/experiments/1514058481528333?o=1451829595406012
+# MAGIC Need a nudge? Use the hint loader below.
+
+# COMMAND ----------
+
+# DBTITLE 1,Load hint for Quest 4
+load_hint("model_training", "quest_4")
 
 # COMMAND ----------
 
@@ -287,10 +299,12 @@ best_pipeline = Pipeline(stages=[*STAGES, best_xgb])
 # MAGIC ## Quest 5 · Evaluate the Tuned Model
 # MAGIC **Goal:** fit the best parameters on train+validation, score the test set, and report feature importances.
 # MAGIC
-# MAGIC **Hints**
-# MAGIC - Union train and validation (`train_df.unionByName(valid_df)`).
-# MAGIC - Train with the new df, `train_val_df`
-# MAGIC - Predict `test_df`
+# MAGIC Need a nudge? Use the hint loader below.
+
+# COMMAND ----------
+
+# DBTITLE 1,Load hint for Quest 5
+load_hint("model_training", "quest_5")
 
 # COMMAND ----------
 
