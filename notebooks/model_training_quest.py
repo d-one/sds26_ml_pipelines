@@ -366,6 +366,10 @@ display(feature_importance_pdf)
 
 # COMMAND ----------
 
+load_hint("model_training", "quest_6")
+
+# COMMAND ----------
+
 # DBTITLE 1,Register final model for production
 client = MlflowClient()
 

@@ -517,7 +517,7 @@ HINTS = {
           <summary>Just show me the answer… 🫠</summary>
           <div class="code-block">
             <pre><span class="variable">train_df</span><span class="operator">,</span> <span class="variable">valid_df</span><span class="operator">,</span> <span class="variable">test_df</span> <span class="operator">=</span> <span class="variable">full_labeled_df</span><span class="operator">.</span><span class="function">randomSplit</span><span class="bracket">(</span>
-    <span class="bracket">[</span><span class="number">0.6</span><span class="operator">,</span> <span class="number">0.2</span><span class="operator">,</span> <span class="number">0.2</span><span class="bracket">]</span><span class="operator">,</span> <span class="variable">seed</span><span class="operator">=</span><span class="number">42</span>
+    <span class="bracket">[</span><span class="comment">0.6</span><span class="operator">,</span> <span class="comment">0.2</span><span class="operator">,</span> <span class="comment">0.2</span><span class="bracket">]</span><span class="operator">,</span> <span class="variable">seed</span><span class="operator">=</span><span class="comment">42</span>
 <span class="bracket">)</span></pre>
           </div>
         </details>
@@ -534,11 +534,11 @@ HINTS = {
           <summary>Just show me the answer… 🫠</summary>
           <div class="code-block">
             <pre><span class="variable">seed_params</span> <span class="operator">=</span> <span class="bracket">{</span>
-    <span class="string">"eta"</span><span class="operator">:</span> <span class="number">0.05759496965676729</span><span class="operator">,</span>
-    <span class="string">"colsample_bytree"</span><span class="operator">:</span> <span class="number">0.6263993741226758</span><span class="operator">,</span>
-    <span class="string">"max_depth"</span><span class="operator">:</span> <span class="number">9</span><span class="operator">,</span>
-    <span class="string">"min_child_weight"</span><span class="operator">:</span> <span class="number">5.0</span><span class="operator">,</span>
-    <span class="string">"subsample"</span><span class="operator">:</span> <span class="number">0.6616262667209235</span><span class="operator">,</span>
+    <span class="string">"eta"</span><span class="operator">:</span> <span class="comment">0.05759496965676729</span><span class="operator">,</span>
+    <span class="string">"colsample_bytree"</span><span class="operator">:</span> <span class="comment">0.6263993741226758</span><span class="operator">,</span>
+    <span class="string">"max_depth"</span><span class="operator">:</span> <span class="comment">9</span><span class="operator">,</span>
+    <span class="string">"min_child_weight"</span><span class="operator">:</span> <span class="comment">5.0</span><span class="operator">,</span>
+    <span class="string">"subsample"</span><span class="operator">:</span> <span class="comment">0.6616262667209235</span><span class="operator">,</span>
 <span class="bracket">}</span></pre>
           </div>
         </details>
@@ -550,20 +550,20 @@ HINTS = {
         <details class="hintbox">
           <summary>Show me the hint!</summary>
           <ul>
-            <li>Extend the training set with what we used for validating hyperparameters.</li>
-            <li><code>fit</code> trains the model.</li>
-            <li><code>transform</code> makes predictions to test the model.</li>
+            <li>fill unionByName(...) with the df what we used for <b>validating</b> hyperparameters.</li>
+            <li>fit(...) <b>trains</b> the model.</li>
+            <li>transform(...) makes predictions to <b>test</b> the model.</li>
           </ul>
         </details>
         <details class="hintbox">
           <summary>Just show me the answer… 🫠</summary>
           <div class="code-block">
-            <pre><span class="variable">train_val_df</span> <span class="operator">=</span> <span class="variable">train_df</span><span class="operator">.</span><span class="function">unionByName</span><span class="bracket">(</span><span class="variable">valid_df</span><span class="bracket">)</span> <span class="comment">#TODO replace placeholder</span>
+            <pre><span class="variable">train_val_df</span> <span class="operator">=</span> <span class="variable">train_df</span><span class="operator">.</span><span class="function">unionByName</span><span class="bracket">(</span><span class="variable">valid_df</span><span class="bracket">)</span> 
 <span class="function">print</span><span class="bracket">(</span><span class="string">f"Train + validation rows: {train_val_df.count():,}"</span><span class="bracket">)</span>
 
-<span class="variable">best_model</span> <span class="operator">=</span> <span class="variable">best_pipeline</span><span class="operator">.</span><span class="function">fit</span><span class="bracket">(</span><span class="variable">train_val_df</span><span class="bracket">)</span>  <span class="comment">#TODO replace placeholder</span>
+<span class="variable">best_model</span> <span class="operator">=</span> <span class="variable">best_pipeline</span><span class="operator">.</span><span class="function">fit</span><span class="bracket">(</span><span class="variable">train_val_df</span><span class="bracket">)</span>  
 
-<span class="variable">test_pred_df</span> <span class="operator">=</span> <span class="variable">best_model</span><span class="operator">.</span><span class="function">transform</span><span class="bracket">(</span><span class="variable">test_df</span><span class="bracket">)</span>  <span class="comment">#TODO replace placeholder</span>
+<span class="variable">test_pred_df</span> <span class="operator">=</span> <span class="variable">best_model</span><span class="operator">.</span><span class="function">transform</span><span class="bracket">(</span><span class="variable">test_df</span><span class="bracket">)</span>  
 <span class="variable">test_prec0</span><span class="operator">,</span> <span class="variable">test_rec0</span><span class="operator">,</span> <span class="variable">test_f10</span> <span class="operator">=</span> <span class="function">class_zero_metrics</span><span class="bracket">(</span>
     <span class="variable">test_pred_df</span><span class="operator">,</span> <span class="variable">LABEL_COL</span><span class="operator">,</span> <span class="variable">PREDICTION_COL</span>
 <span class="bracket">)</span></pre>
@@ -616,8 +616,8 @@ HINTS = {
 
 # COMMAND ----------
 
-
 # DBTITLE 1,load_hint
+
 def load_hint(notebook, quest_id):
     base_css = """
     <style>
