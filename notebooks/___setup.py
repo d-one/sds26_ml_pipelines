@@ -383,18 +383,24 @@ def clean_all() -> None:
         except Exception as exc:
             print(f"Cleanup '{fn.__name__}' failed: {exc}")
 
+
 # COMMAND ----------
 
 # DBTITLE 1,HINTS
 HINTS = {
-    ("predictions", "quest_1"): """
+    (
+        "predictions",
+        "quest_1",
+    ): """
         <details class="hintbox">
           <summary>Show me the code hint!</summary>
           <pre><code>alias = "@champion"</code></pre>
         </details>
         """,
-
-    ("predictions", "quest_2"): """
+    (
+        "predictions",
+        "quest_2",
+    ): """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
 
@@ -433,7 +439,10 @@ HINTS = {
 
         </details>
         """,
-    ("predictions", "quest_3"): """
+    (
+        "predictions",
+        "quest_3",
+    ): """
           <details class="hintbox">
             <summary>Show me the hint!</summary>
 
@@ -458,8 +467,10 @@ HINTS = {
 
           </details>
           """,
-
-    ("model_training", "quest_1"): """
+    (
+        "model_training",
+        "quest_1",
+    ): """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
           <ul>
@@ -477,46 +488,65 @@ HINTS = {
           </div>
         </details>
         """,
-
-    ("model_training", "quest_2"): """
+    (
+        "model_training",
+        "quest_2",
+    ): """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
           <p>Reuse the feature lists you derived in Quest 1.</p>
         </details>
+        <details class="hintbox">
+          <summary>Just show me the answer… 🫠</summary>
+          <div class="code-block">
+            <pre><code>feature_names=all_feature_cols
+feature_lookups=[feature_lookup]</code></pre>
+          </div>
+        </details>
 
         """,
-
-    ("model_training", "quest_3"): """
+    (
+        "model_training",
+        "quest_3",
+    ): """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
           <p>Use three float numbers in the placeholder list.</p>
         </details>
         <details class="hintbox">
           <summary>Just show me the answer… 🫠</summary>
-          <pre><code>train_df, valid_df, test_df = full_labeled_df.randomSplit(
+          <div class="code-block">
+            <pre><code>train_df, valid_df, test_df = full_labeled_df.randomSplit(
     [0.6, 0.2, 0.2], seed=42
 )</code></pre>
+          </div>
         </details>
         """,
-
-    ("model_training", "quest_4"): """
+    (
+        "model_training",
+        "quest_4",
+    ): """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
           <p>Review the AutoML experiment: <a href="https://adb-1451829595406012.12.azuredatabricks.net/ml/experiments/1514058481528333?o=1451829595406012" target="_blank">Coffee AutoML run</a>.</p>
         </details>
         <details class="hintbox">
           <summary>Just show me the answer… 🫠</summary>
-          <pre><code>seed_params = {
+          <div class="code-block">
+            <pre><code>seed_params = {
     "eta": 0.05759496965676729,
     "colsample_bytree": 0.6263993741226758,
     "max_depth": 9,
     "min_child_weight": 5.0,
     "subsample": 0.6616262667209235,
 }</code></pre>
+          </div>
         </details>
         """,
-
-    ("model_training", "quest_5"): """
+    (
+        "model_training",
+        "quest_5",
+    ): """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
           <ul>
@@ -527,7 +557,8 @@ HINTS = {
         </details>
         <details class="hintbox">
           <summary>Just show me the answer… 🫠</summary>
-          <pre><code>train_val_df = train_df.unionByName(valid_df) #TODO replace placeholder
+          <div class="code-block">
+            <pre><code>train_val_df = train_df.unionByName(valid_df) #TODO replace placeholder
 print(f"Train + validation rows: {train_val_df.count():,}")
 
 best_model = best_pipeline.fit(train_val_df)  #TODO replace placeholder
@@ -536,10 +567,13 @@ test_pred_df = best_model.transform(test_df)  #TODO replace placeholder
 test_prec0, test_rec0, test_f10 = class_zero_metrics(
     test_pred_df, LABEL_COL, PREDICTION_COL
 )</code></pre>
+          </div>
         </details>
         """,
-
-    ("model_training", "quest_6"): """
+    (
+        "model_training",
+        "quest_6",
+    ): """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
           <p>Take a break! Just run the cell!</p>
@@ -549,8 +583,10 @@ test_prec0, test_rec0, test_f10 = class_zero_metrics(
           <p>Seriously, just run it 🚀</p>
         </details>
         """,
-
-    ("model_training", "quest_7"): """
+    (
+        "model_training",
+        "quest_7",
+    ): """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
           <ul>
@@ -558,19 +594,15 @@ test_prec0, test_rec0, test_f10 = class_zero_metrics(
             <li>There is no room for two champions...⚔️ </li>
           </ul>
         </details>
-        <details class="hintbox">
+<details class="hintbox">
           <summary>Just show me the answer… 🫠</summary>
-          <p>You could just promote the challenger if it is better than the champion:</p>
           <div class="code-block">
             <pre><span class="keyword">if</span> <span class="variable">challenger_f1</span> <span class="operator">&gt;</span> <span class="variable">champion_f1</span><span class="operator">:</span>
             <span class="comment"># This automatically removes the champion alias from the previous version</span>
             <span class="variable">client</span><span class="operator">.</span><span class="function">set_registered_model_alias</span><span class="bracket">(</span>
                 <span class="variable">UC_MODEL_NAME</span><span class="operator">,</span> <span class="string">"champion"</span><span class="operator">,</span> <span class="variable">challenger_version</span>
             <span class="bracket">)</span>
-          </div>
-          <p>Or you could also alias the previous champion:
-          <div class="code-block">
-            <span class="comment"># Mark the previous champion optionally</span>
+            <span class="comment"># Mark the previous champion</span>
             <span class="variable">client</span><span class="operator">.</span><span class="function">set_registered_model_alias</span><span class="bracket">(</span>
                 <span class="variable">UC_MODEL_NAME</span><span class="operator">,</span> <span class="string">"previous_champion"</span><span class="operator">,</span> <span class="variable">champion_version</span>
             <span class="bracket">)</span>
@@ -579,10 +611,11 @@ test_prec0, test_rec0, test_f10 = class_zero_metrics(
             <span class="function">print</span><span class="bracket">(</span><span class="string">f"Champion wins! Model version {champion_version} remains the champion."</span><span class="bracket">)</span></pre>
           </div>
         </details>
-        """
+        """,
 }
 
 # COMMAND ----------
+
 
 # DBTITLE 1,load_hint
 def load_hint(notebook, quest_id):
