@@ -499,8 +499,8 @@ HINTS = {
         <details class="hintbox">
           <summary>Just show me the answer… 🫠</summary>
           <div class="code-block">
-            <pre><code>feature_names=all_feature_cols
-feature_lookups=[feature_lookup]</code></pre>
+            <pre><span class="variable">feature_names</span><span class="operator">=</span><span class="variable">all_feature_cols</span>
+<span class="variable">feature_lookups</span><span class="operator">=</span><span class="bracket">[</span><span class="variable">feature_lookup</span><span class="bracket">]</span></pre>
           </div>
         </details>
 
@@ -516,9 +516,9 @@ feature_lookups=[feature_lookup]</code></pre>
         <details class="hintbox">
           <summary>Just show me the answer… 🫠</summary>
           <div class="code-block">
-            <pre><code>train_df, valid_df, test_df = full_labeled_df.randomSplit(
-    [0.6, 0.2, 0.2], seed=42
-)</code></pre>
+            <pre><span class="variable">train_df</span><span class="operator">,</span> <span class="variable">valid_df</span><span class="operator">,</span> <span class="variable">test_df</span> <span class="operator">=</span> <span class="variable">full_labeled_df</span><span class="operator">.</span><span class="function">randomSplit</span><span class="bracket">(</span>
+    <span class="bracket">[</span><span class="number">0.6</span><span class="operator">,</span> <span class="number">0.2</span><span class="operator">,</span> <span class="number">0.2</span><span class="bracket">]</span><span class="operator">,</span> <span class="variable">seed</span><span class="operator">=</span><span class="number">42</span>
+<span class="bracket">)</span></pre>
           </div>
         </details>
         """,
@@ -533,13 +533,13 @@ feature_lookups=[feature_lookup]</code></pre>
         <details class="hintbox">
           <summary>Just show me the answer… 🫠</summary>
           <div class="code-block">
-            <pre><code>seed_params = {
-    "eta": 0.05759496965676729,
-    "colsample_bytree": 0.6263993741226758,
-    "max_depth": 9,
-    "min_child_weight": 5.0,
-    "subsample": 0.6616262667209235,
-}</code></pre>
+            <pre><span class="variable">seed_params</span> <span class="operator">=</span> <span class="bracket">{</span>
+    <span class="string">"eta"</span><span class="operator">:</span> <span class="number">0.05759496965676729</span><span class="operator">,</span>
+    <span class="string">"colsample_bytree"</span><span class="operator">:</span> <span class="number">0.6263993741226758</span><span class="operator">,</span>
+    <span class="string">"max_depth"</span><span class="operator">:</span> <span class="number">9</span><span class="operator">,</span>
+    <span class="string">"min_child_weight"</span><span class="operator">:</span> <span class="number">5.0</span><span class="operator">,</span>
+    <span class="string">"subsample"</span><span class="operator">:</span> <span class="number">0.6616262667209235</span><span class="operator">,</span>
+<span class="bracket">}</span></pre>
           </div>
         </details>
         """,
@@ -558,15 +558,15 @@ feature_lookups=[feature_lookup]</code></pre>
         <details class="hintbox">
           <summary>Just show me the answer… 🫠</summary>
           <div class="code-block">
-            <pre><code>train_val_df = train_df.unionByName(valid_df) #TODO replace placeholder
-print(f"Train + validation rows: {train_val_df.count():,}")
+            <pre><span class="variable">train_val_df</span> <span class="operator">=</span> <span class="variable">train_df</span><span class="operator">.</span><span class="function">unionByName</span><span class="bracket">(</span><span class="variable">valid_df</span><span class="bracket">)</span> <span class="comment">#TODO replace placeholder</span>
+<span class="function">print</span><span class="bracket">(</span><span class="string">f"Train + validation rows: {train_val_df.count():,}"</span><span class="bracket">)</span>
 
-best_model = best_pipeline.fit(train_val_df)  #TODO replace placeholder
+<span class="variable">best_model</span> <span class="operator">=</span> <span class="variable">best_pipeline</span><span class="operator">.</span><span class="function">fit</span><span class="bracket">(</span><span class="variable">train_val_df</span><span class="bracket">)</span>  <span class="comment">#TODO replace placeholder</span>
 
-test_pred_df = best_model.transform(test_df)  #TODO replace placeholder
-test_prec0, test_rec0, test_f10 = class_zero_metrics(
-    test_pred_df, LABEL_COL, PREDICTION_COL
-)</code></pre>
+<span class="variable">test_pred_df</span> <span class="operator">=</span> <span class="variable">best_model</span><span class="operator">.</span><span class="function">transform</span><span class="bracket">(</span><span class="variable">test_df</span><span class="bracket">)</span>  <span class="comment">#TODO replace placeholder</span>
+<span class="variable">test_prec0</span><span class="operator">,</span> <span class="variable">test_rec0</span><span class="operator">,</span> <span class="variable">test_f10</span> <span class="operator">=</span> <span class="function">class_zero_metrics</span><span class="bracket">(</span>
+    <span class="variable">test_pred_df</span><span class="operator">,</span> <span class="variable">LABEL_COL</span><span class="operator">,</span> <span class="variable">PREDICTION_COL</span>
+<span class="bracket">)</span></pre>
           </div>
         </details>
         """,
