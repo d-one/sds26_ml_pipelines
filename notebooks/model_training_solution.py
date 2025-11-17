@@ -89,7 +89,7 @@ coffee_labeled_df.limit(10).display()
 
 # COMMAND ----------
 
-# DBTITLE 1,????
+# QUEST 1 SOLUTION
 numeric_cols.remove("Alcohol_Consumption")
 numeric_cols.remove("Smoking")
 
@@ -116,14 +116,14 @@ labeled_fact_df = spark.table(f"{CATALOG}.{MY_SCHEMA}.coffee_labeled_fact")
 
 feature_lookup = FeatureLookup(
     table_name=f"{CATALOG}.{MY_SCHEMA}.coffee_features",
-    feature_names=all_feature_cols,      #TODO replace placeholder
+    feature_names=all_feature_cols,    # QUEST 2 SOLUTION
     lookup_key="ID",
     timestamp_lookup_key="Timestamp",
 )
 
 training_set = fe.create_training_set(
     df=labeled_fact_df,
-    feature_lookups=[feature_lookup],  #TODO replace placeholder
+    feature_lookups=[feature_lookup],  # QUEST 2 SOLUTION
     label=LABEL_COL,
 )
 
@@ -148,7 +148,7 @@ load_hint("model_training", "quest_3")
 
 # DBTITLE 1,Dataset splits & pipeline definition
 train_df, valid_df, test_df = full_labeled_df.randomSplit(
-    [0.6, 0.2, 0.2], seed=42  #TODO: replace placeholders
+    [0.6, 0.2, 0.2], seed=42  # QUEST 3 SOLUTION
 )
 for split_name, split_df in [
     ("train", train_df),
@@ -259,7 +259,7 @@ def objective(trial: optuna.Trial) -> float:
         return val_f10
 
 
-# TODO: choose your starting hyperparameters
+### QUEST 5 SOLUTION START ###
 seed_params = {
     "eta": 0.05759496965676729,
     "colsample_bytree": 0.6263993741226758,
@@ -267,6 +267,7 @@ seed_params = {
     "min_child_weight": 5.0,
     "subsample": 0.6616262667209235,
 }
+### QUEST 5 SOLUTION END ###
 
 with mlflow.start_run(
     experiment_id=exp_id, run_name="parent_run_optuna_hp", nested=True
@@ -327,12 +328,12 @@ load_hint("model_training", "quest_5")
 
 # COMMAND ----------
 
-train_val_df = train_df.unionByName(valid_df) #TODO replace placeholder
+train_val_df = train_df.unionByName(valid_df) # QUEST 5 SOLUTION
 print(f"Train + validation rows: {train_val_df.count():,}")
 
-best_model = best_pipeline.fit(train_val_df)  #TODO replace placeholder
+best_model = best_pipeline.fit(train_val_df)  # QUEST 5 SOLUTION
 
-test_pred_df = best_model.transform(test_df)  #TODO replace placeholder
+test_pred_df = best_model.transform(test_df)  # QUEST 5 SOLUTION
 test_prec0, test_rec0, test_f10 = class_zero_metrics(
     test_pred_df, LABEL_COL, PREDICTION_COL
 )
@@ -513,7 +514,7 @@ with mlflow.start_run(run_name="coffee_xgb_best") as run:
     versions = client.search_model_versions(f"name = '{UC_MODEL_NAME}'")
     challenger_version = versions[0].version
 
-    # TODO: Write promotion logic with aliases below
+    ### QUEST 7 SOLUTION START ###
     if challenger_f1 > champion_f1:
         # This automatically removes the champion alias from the previous version
         client.set_registered_model_alias(
@@ -526,7 +527,7 @@ with mlflow.start_run(run_name="coffee_xgb_best") as run:
         print(f"Challenger wins! Model version {challenger_version} is now the new champion.")
     else:
         print(f"Champion wins! Model version {champion_version} remains the champion.")
-
+    ### QUEST 7 SOLUTION END ###
 
 # COMMAND ----------
 

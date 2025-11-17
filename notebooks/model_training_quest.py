@@ -450,12 +450,12 @@ load_hint("model_training", "quest_7")
 # COMMAND ----------
 
 # DBTITLE 1,Promote the challenger
-# New data comes in!
 new_data_for_training, new_data_for_testing = test_df.randomSplit(
     [0.5, 0.5], seed=42
 )
 
 updated_df = train_val_df.unionByName(new_data_for_training)
+print(f"Updated data rows: {updated_df.count():,}")
 
 # Load Champion model by using its alias
 champion_model = mlflow.spark.load_model(f"models:/{UC_MODEL_NAME}@champion")
@@ -465,6 +465,11 @@ champion_predictions_df = best_model.transform(new_data_for_testing)
 champion_precision, champion_recall, champion_f1 = class_zero_metrics(
     champion_predictions_df, LABEL_COL, PREDICTION_COL
 )
+# Store current Champion info
+champ_info = client.get_model_version_by_alias(
+    UC_MODEL_NAME, "champion"
+)
+champion_version = champ_info.version
 
 # Train the Challenger model on the updated data
 challenger_model = best_pipeline.fit(updated_df)
@@ -495,11 +500,10 @@ with mlflow.start_run(run_name="coffee_xgb_best") as run:
         registered_model_name=UC_MODEL_NAME,
         pip_requirements=PIP_REQUIREMENTS,
         signature=signature,
-        input_example=sample_inf_df,
     )
 
     versions = client.search_model_versions(f"name = '{UC_MODEL_NAME}'")
-    champion_version = versions[0].version
+    challenger_version = versions[0].version
 
     # TODO: Write promotion logic with aliases below
 

@@ -610,7 +610,7 @@ HINTS = {
     ): """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
-          <p>Take a break! Just run the cell!</p>
+          <p>Take a break 🏖️! Just run the cell!</p>
         </details>
         <details class="hintbox">
           <summary>Just show me the answer… 🫠</summary>
