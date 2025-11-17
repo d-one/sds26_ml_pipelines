@@ -5,6 +5,11 @@
 # MAGIC AutoML (Automated Machine Learning) simplifies the process of building machine learning models by automating tasks such as data preprocessing, feature engineering, model selection, and hyperparameter tuning. This enables users to quickly develop high-quality models with minimal manual intervention, making machine learning accessible to both experts and non-experts.
 # MAGIC
 # MAGIC Here, we employ Databricks AutoML to quickly get a baseline model and find a suited model type for the current setting.
+# MAGIC
+# MAGIC To save some time, we already ran an experiment for you:
+# MAGIC
+# MAGIC  https://adb-1451829595406012.12.azuredatabricks.net/ml/experiments/3803308650008383?o=1451829595406012
+# MAGIC
 
 # COMMAND ----------
 
