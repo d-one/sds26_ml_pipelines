@@ -91,6 +91,8 @@ categorical_cols += ["Alcohol_Consumption", "Smoking"]
 # MAGIC ## Quest 2 · Prepare the Feature Store Training Set
 # MAGIC **Goal:** load the fact table and build a Feature Store training set that joins in features.
 # MAGIC
+# MAGIC You only need to replace the `...` placeholders.
+# MAGIC
 # MAGIC Need a nudge? Use the hint loader below.
 
 # COMMAND ----------
