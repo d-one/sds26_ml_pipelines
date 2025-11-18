@@ -64,6 +64,7 @@ load_hint("model_training", "quest_1")
 
 # DBTITLE 1,Feature categories
 BASE_COLUMNS = ["Coffee_Intake_Binary", "ID", "Timestamp"]
+# Keep label + identifiers out of the auto-generated feature lists
 coffee_labeled_df = spark.table(f"{CATALOG}.{MY_SCHEMA}.coffee_labeled")
 data_schema_fields = coffee_labeled_df.schema.fields
 
@@ -114,13 +115,15 @@ load_hint("model_training", "quest_2")
 fe = FeatureEngineeringClient()
 labeled_fact_df = spark.table(f"{CATALOG}.{MY_SCHEMA}.coffee_labeled_fact")
 
+# Compose a Feature Lookup that pulls engineered columns by key + timestamp
 feature_lookup = FeatureLookup(
     table_name=f"{CATALOG}.{MY_SCHEMA}.coffee_features",
-    feature_names=all_feature_cols,    # QUEST 2 SOLUTION
+    feature_names=all_feature_cols,  # QUEST 2 SOLUTION
     lookup_key="ID",
     timestamp_lookup_key="Timestamp",
 )
 
+# Materialize a Feature Store training set with lookups and our label
 training_set = fe.create_training_set(
     df=labeled_fact_df,
     feature_lookups=[feature_lookup],  # QUEST 2 SOLUTION
@@ -157,6 +160,7 @@ for split_name, split_df in [
 ]:
     print(f"{split_name.title()} split: {split_df.count():,} rows")
 
+# Assemble preprocessing steps once so every model trial reuses them
 STAGES = build_preprocessing_stages(categorical_cols, numeric_cols)
 
 exp_id = init_experiment(MLFLOW_EXPERIMENT_NAME)
@@ -178,6 +182,7 @@ load_hint("model_training", "quest_4")
 
 # DBTITLE 1,Hyperparameter tuning
 optuna.logging.set_verbosity(optuna.logging.ERROR)
+
 
 # We wrap our model training in an objective function. This is a Trial
 def objective(trial: optuna.Trial) -> float:
@@ -250,7 +255,7 @@ seed_params = {
 with mlflow.start_run(
     experiment_id=exp_id, run_name="parent_run_optuna_hp", nested=True
 ) as parent_run:
-    
+
     # We define a study, which is a collection of trials
     study = optuna.create_study(
         direction="maximize", study_name="coffee_optuna_study"
@@ -307,7 +312,7 @@ load_hint("model_training", "quest_5")
 
 # COMMAND ----------
 
-train_val_df = train_df.unionByName(valid_df) # QUEST 5 SOLUTION
+train_val_df = train_df.unionByName(valid_df)  # QUEST 5 SOLUTION
 print(f"Train + validation rows: {train_val_df.count():,}\n")
 
 best_model = best_pipeline.fit(train_val_df)  # QUEST 5 SOLUTION
@@ -343,6 +348,7 @@ client = MlflowClient()
 
 with mlflow.start_run(run_name="coffee_xgb_best") as run:
 
+    # Capture a schema example so MLflow can store model signature/input
     sample_inf_df = full_labeled_df.drop("Coffee_Intake_Binary").limit(1)
     sample_pred_df = best_model.transform(sample_inf_df).select(
         sample_inf_df.columns + ["prediction"]
@@ -356,6 +362,7 @@ with mlflow.start_run(run_name="coffee_xgb_best") as run:
         registered_model_name=UC_MODEL_NAME,
         pip_requirements=PIP_REQUIREMENTS,
         signature=signature,
+        input_example=sample_inf_df,
     )
 
     versions = client.search_model_versions(f"name = '{UC_MODEL_NAME}'")
@@ -401,7 +408,7 @@ load_hint("model_training", "quest_7")
 
 # COMMAND ----------
 
-# DBTITLE 1,Promote the challenger >> Διαφορετικό κώδικας με quest
+# DBTITLE 1,Promote the challenger
 # New data comes in!
 new_data_for_training, new_data_for_testing = test_df.randomSplit(
     [0.5, 0.5], seed=42
@@ -419,27 +426,22 @@ champion_precision, champion_recall, champion_f1 = class_zero_metrics(
     champion_predictions_df, LABEL_COL, PREDICTION_COL
 )
 # Store current Champion info
-champ_info = client.get_model_version_by_alias(
-    UC_MODEL_NAME, "champion"
-)
+champ_info = client.get_model_version_by_alias(UC_MODEL_NAME, "champion")
 champion_version = champ_info.version
 
 # Train the Challenger model on the updated data
 challenger_model = best_pipeline.fit(updated_df)
-challenger_predictions_df = challenger_model.transform(
-    new_data_for_testing
-)
+challenger_predictions_df = challenger_model.transform(new_data_for_testing)
 
 # Evaluate the Challenger model on the new data
-challenger_precision, challenger_recall, challenger_f1 = (
-    class_zero_metrics(
-        challenger_predictions_df, LABEL_COL, PREDICTION_COL
-    )
+challenger_precision, challenger_recall, challenger_f1 = class_zero_metrics(
+    challenger_predictions_df, LABEL_COL, PREDICTION_COL
 )
 
 # Log Challenger model
 with mlflow.start_run(run_name="coffee_xgb_best") as run:
 
+    # Capture a signature snapshot for the challenger as well
     sample_inf_df = updated_df.drop("Coffee_Intake_Binary").limit(1)
     sample_pred_df = challenger_model.transform(sample_inf_df).select(
         sample_inf_df.columns + ["prediction"]
@@ -471,9 +473,13 @@ with mlflow.start_run(run_name="coffee_xgb_best") as run:
         client.set_registered_model_alias(
             UC_MODEL_NAME, "previous_champion", champion_version
         )
-        print(f"Challenger wins! Model version {challenger_version} is now the new champion.")
+        print(
+            f"Challenger wins! Model version {challenger_version} is now the new champion."
+        )
     else:
-        print(f"Champion wins! Model version {champion_version} remains the champion.")
+        print(
+            f"Champion wins! Model version {champion_version} remains the champion."
+        )
     ### QUEST 7 SOLUTION END ###
 
 # COMMAND ----------

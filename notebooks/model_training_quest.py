@@ -64,6 +64,7 @@ load_hint("model_training", "quest_1")
 
 # DBTITLE 1,Feature categories
 BASE_COLUMNS = ["Coffee_Intake_Binary", "ID", "Timestamp"]
+# Keep label + identifiers out of the auto-generated feature lists
 coffee_labeled_df = spark.table(f"{CATALOG}.{MY_SCHEMA}.coffee_labeled")
 data_schema_fields = coffee_labeled_df.schema.fields
 
@@ -106,16 +107,18 @@ load_hint("model_training", "quest_2")
 fe = FeatureEngineeringClient()
 labeled_fact_df = spark.table(f"{CATALOG}.{MY_SCHEMA}.coffee_labeled_fact")
 
+# Compose a Feature Lookup that pulls engineered columns by key + timestamp
 feature_lookup = FeatureLookup(
     table_name=f"{CATALOG}.{MY_SCHEMA}.coffee_features",
-    feature_names=...,      #TODO replace placeholder
+    feature_names=...,  # TODO replace placeholder
     lookup_key="ID",
     timestamp_lookup_key="Timestamp",
 )
 
+# Materialize a Feature Store training set with lookups and our label
 training_set = fe.create_training_set(
     df=labeled_fact_df,
-    feature_lookups=[...],  #TODO replace placeholder
+    feature_lookups=[...],  # TODO replace placeholder
     label=LABEL_COL,
 )
 
@@ -140,7 +143,7 @@ load_hint("model_training", "quest_3")
 
 # DBTITLE 1,Dataset splits & pipeline definition
 train_df, valid_df, test_df = full_labeled_df.randomSplit(
-    [..., ..., ...], seed=42  #TODO: replace placeholders
+    [..., ..., ...], seed=42  # TODO: replace placeholders
 )
 for split_name, split_df in [
     ("train", train_df),
@@ -149,6 +152,7 @@ for split_name, split_df in [
 ]:
     print(f"{split_name.title()} split: {split_df.count():,} rows")
 
+# Assemble preprocessing steps once so every model trial reuses them
 STAGES = build_preprocessing_stages(categorical_cols, numeric_cols)
 
 exp_id = init_experiment(MLFLOW_EXPERIMENT_NAME)
@@ -172,9 +176,10 @@ load_hint("model_training", "quest_4")
 optuna.logging.set_verbosity(optuna.logging.ERROR)
 
 
+# We wrap our model training in an objective function. This is a Trial
 def objective(trial: optuna.Trial) -> float:
     run_name = (
-        "automl_parameters_trial"
+        "seed_parameters_trial"
         if trial.number == 0
         else f"optuna_trial_{trial.number:03d}"
     )
@@ -241,10 +246,15 @@ seed_params = {
 with mlflow.start_run(
     experiment_id=exp_id, run_name="parent_run_optuna_hp", nested=True
 ) as parent_run:
+
+    # We define a study, which is a collection of trials
     study = optuna.create_study(
         direction="maximize", study_name="coffee_optuna_study"
     )
+    # We seed the starting parameters
     study.enqueue_trial(seed_params, skip_if_exists=True)
+
+    # We run the study
     study.optimize(
         objective,
         n_trials=5,
@@ -252,12 +262,13 @@ with mlflow.start_run(
         show_progress_bar=True,
     )
 
+    # We keep the best parameters from the best trial
     mlflow.log_params(study.best_params)
     mlflow.log_metric("best_validation_f1", float(study.best_value))
 
 
-print(f"Best validation F1 (class 0): {study.best_value:.4f}")
-print("Best parameters:")
+print(f"\nBest validation F1 (class 0): {study.best_value:.4f}")
+print("\nBest parameters:")
 for key, value in study.best_params.items():
     print(f"  - {key}: {value}")
 best_params = study.best_params
@@ -292,22 +303,22 @@ load_hint("model_training", "quest_5")
 
 # COMMAND ----------
 
-train_val_df = train_df.unionByName(...)  #TODO replace placeholder
+train_val_df = train_df.unionByName(...)  # TODO replace placeholder
 print(f"Train + validation rows: {train_val_df.count():,}")
 
-best_model = best_pipeline.fit(...)       #TODO replace placeholder
+best_model = best_pipeline.fit(...)  # TODO replace placeholder
 
-test_pred_df = best_model.transform(...)  #TODO replace placeholder
+test_pred_df = best_model.transform(...)  # TODO replace placeholder
 test_prec0, test_rec0, test_f10 = class_zero_metrics(
     test_pred_df, LABEL_COL, PREDICTION_COL
 )
 
-conf_mat_df = (
+confusion_matrix_df = (
     test_pred_df.groupBy("prediction", LABEL_COL)
     .agg(F.count("*").alias("rows"))
     .orderBy("prediction", LABEL_COL)
 )
-confusion_matrix_df = confusion_matrix_df.toPandas()
+confusion_matrix_pdf = confusion_matrix_df.toPandas()
 display(confusion_matrix_pdf)
 
 # COMMAND ----------
@@ -328,6 +339,7 @@ client = MlflowClient()
 
 with mlflow.start_run(run_name="coffee_xgb_best") as run:
 
+    # Capture a schema example so MLflow can store model signature/input
     sample_inf_df = full_labeled_df.drop("Coffee_Intake_Binary").limit(1)
     sample_pred_df = best_model.transform(sample_inf_df).select(
         sample_inf_df.columns + ["prediction"]
@@ -388,6 +400,7 @@ load_hint("model_training", "quest_7")
 # COMMAND ----------
 
 # DBTITLE 1,Promote the challenger
+# New data comes in!
 new_data_for_training, new_data_for_testing = test_df.randomSplit(
     [0.5, 0.5], seed=42
 )
@@ -404,27 +417,22 @@ champion_precision, champion_recall, champion_f1 = class_zero_metrics(
     champion_predictions_df, LABEL_COL, PREDICTION_COL
 )
 # Store current Champion info
-champ_info = client.get_model_version_by_alias(
-    UC_MODEL_NAME, "champion"
-)
+champ_info = client.get_model_version_by_alias(UC_MODEL_NAME, "champion")
 champion_version = champ_info.version
 
 # Train the Challenger model on the updated data
 challenger_model = best_pipeline.fit(updated_df)
-challenger_predictions_df = challenger_model.transform(
-    new_data_for_testing
-)
+challenger_predictions_df = challenger_model.transform(new_data_for_testing)
 
 # Evaluate the Challenger model on the new data
-challenger_precision, challenger_recall, challenger_f1 = (
-    class_zero_metrics(
-        challenger_predictions_df, LABEL_COL, PREDICTION_COL
-    )
+challenger_precision, challenger_recall, challenger_f1 = class_zero_metrics(
+    challenger_predictions_df, LABEL_COL, PREDICTION_COL
 )
 
 # Log Challenger model
 with mlflow.start_run(run_name="coffee_xgb_best") as run:
 
+    # Capture a signature snapshot for the challenger as well
     sample_inf_df = updated_df.drop("Coffee_Intake_Binary").limit(1)
     sample_pred_df = challenger_model.transform(sample_inf_df).select(
         sample_inf_df.columns + ["prediction"]
