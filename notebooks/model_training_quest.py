@@ -282,6 +282,7 @@ load_hint("model_training", "quest_5")
 
 # COMMAND ----------
 
+# DBTITLE 1,Evaluate tuned model on test set
 train_val_df = train_df.unionByName(...)  # TODO replace placeholder
 print(f"Train + validation rows: {train_val_df.count():,}")
 
