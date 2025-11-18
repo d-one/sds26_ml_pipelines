@@ -8,13 +8,13 @@
 # MAGIC
 # MAGIC To save some time, we already ran an experiment for you:
 # MAGIC
-# MAGIC https://adb-1451829595406012.12.azuredatabricks.net/ml/experiments/1514058481528333?o=1451829595406012
+# MAGIC https://adb-1451829595406012.12.azuredatabricks.net/?o=1451829595406012#mlflow/experiments/895133209892610
 # MAGIC
 
 # COMMAND ----------
 
 # DBTITLE 1,Setup
-# MAGIC %run ./00_setup
+# MAGIC %run ./___setup
 
 # COMMAND ----------
 
@@ -44,5 +44,5 @@ summary = automl.classify(
     experiment_name=EXPERIMENT_NAME,
     exclude_cols=["ID", "Timestamp"],
     pos_label="0",
-    timeout_minutes=5,  # Default value 120 minutes, minimum 5 minutes
+    timeout_minutes=60,  # Default value 120 minutes, minimum 5 minutes
 )

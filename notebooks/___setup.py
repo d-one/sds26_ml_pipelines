@@ -549,7 +549,7 @@ HINTS = {
     ): """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
-          <p>Review the AutoML experiment: <a href="https://adb-1451829595406012.12.azuredatabricks.net/ml/experiments/1514058481528333?o=1451829595406012" target="_blank">Coffee AutoML run</a>.</p>
+          <p>Review the AutoML experiment: <a href="https://adb-1451829595406012.12.azuredatabricks.net/?o=1451829595406012#mlflow/experiments/895133209892610" target="_blank">Coffee AutoML run</a>.</p>
         </details>
         <details class="hintbox">
           <summary>Just show me the answer… 🫠</summary>
