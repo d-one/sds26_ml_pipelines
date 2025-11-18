@@ -532,7 +532,7 @@ HINTS = {
     ): """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
-          <p>Use three float numbers in the placeholder list.</p>
+          <p>Use three decimal numbers in the placeholder list.</p>
         </details>
         <details class="hintbox">
           <summary>Just show me the answer… 🫠</summary>

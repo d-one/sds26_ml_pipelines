@@ -36,7 +36,7 @@ from xgboost.spark import SparkXGBClassifier
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Quest 1 · Define Feature Categories
+# MAGIC ## Quest 1 · Identify categories of features
 # MAGIC **Goal:** detect numeric and categorical columns from the labeled dataset.
 # MAGIC - Inspect the results.
 # MAGIC - Are the contents of the variable lists accurate?
@@ -52,7 +52,7 @@ load_hint("model_training", "quest_1")
 # COMMAND ----------
 
 # DBTITLE 1,Feature categories
-BASE_COLUMNS = ["Coffee_Intake_Binary", "ID", "Timestamp"]
+FACT_COLUMNS = ["Coffee_Intake_Binary", "ID", "Timestamp"]
 # Keep label + identifiers out of the auto-generated feature lists
 coffee_labeled_df = spark.table(f"{CATALOG}.{SCHEMA_WITH_SOURCE_DATA}.coffee_labeled_features")
 data_schema_fields = coffee_labeled_df.schema.fields
@@ -62,13 +62,13 @@ numeric_cols = [
     for field in data_schema_fields
     if field.dataType
     in [T.IntegerType(), T.DoubleType(), T.LongType(), T.FloatType()]
-    and field.name not in BASE_COLUMNS
+    and field.name not in FACT_COLUMNS
 ]
 
 categorical_cols = [
     field.name
     for field in data_schema_fields
-    if field.dataType == T.StringType() and field.name not in BASE_COLUMNS
+    if field.dataType == T.StringType() and field.name not in FACT_COLUMNS
 ]
 
 all_feature_cols = numeric_cols + categorical_cols
@@ -175,10 +175,21 @@ load_hint("model_training", "quest_4")
 
 # COMMAND ----------
 
-# DBTITLE 1,Hyperparameter tuning
-optuna.logging.set_verbosity(optuna.logging.ERROR)
+# DBTITLE 1,Common model parameters
+base_xgb_params = {
+    label_col: "Coffee_Intake_Binary",
+    features_col: "features",
+    probability_col: "probability",
+    raw_prediction: "rawPrediction",
+    prediction: "prediction",
+    seed: 42,
+    tree_method: "hist",
+    eval_metric: "logloss",
+}
 
+# COMMAND ----------
 
+# DBTITLE 1,Objective function
 # We wrap our model training in an objective function. This is a Trial
 def objective(trial: optuna.Trial) -> float:
     run_name = (
@@ -187,40 +198,21 @@ def objective(trial: optuna.Trial) -> float:
         else f"optuna_trial_{trial.number:03d}"
     )
 
-    with mlflow.start_run(
-        run_name=run_name,
-        nested=True,
-        tags={"mlflow.parentRunId": parent_run.info.run_id},
-    ):
+    with mlflow.start_run(run_name=run_name, nested=True, tags={"mlflow.parentRunId": parent_run.info.run_id}):
         params = {
             "eta": trial.suggest_float("eta", 0.01, 0.3, log=True),
             "max_depth": trial.suggest_int("max_depth", 3, 12),
-            "min_child_weight": trial.suggest_float(
-                "min_child_weight", 1.0, 10.0
-            ),
+            "min_child_weight": trial.suggest_float("min_child_weight", 1.0, 10.0),
             "subsample": trial.suggest_float("subsample", 0.5, 1.0),
-            "colsample_bytree": trial.suggest_float(
-                "colsample_bytree", 0.5, 1.0
-            ),
+            "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
         }
 
-        xgb = SparkXGBClassifier(
-            "Coffee_Intake_Binary"="Coffee_Intake_Binary",
-            features_col="features",
-            probability_col="probability",
-            raw_"prediction"="rawPrediction",
-            "prediction"="prediction",
-            seed=42,
-            tree_method="hist",
-            eval_metric="logloss",
-            **params,
-        )
+        xgb = SparkXGBClassifier(**base_xgb_params, **params)
 
         pipeline = Pipeline(stages=[*STAGES, xgb])
         model = pipeline.fit(train_df)
-        val_predictions = model.transform(valid_df).select(
-            "Coffee_Intake_Binary", "prediction"
-        )
+
+        val_predictions = model.transform(valid_df).select("Coffee_Intake_Binary", "prediction")
 
         val_precision0, val_recall0, val_f10 = class_zero_metrics(
             val_predictions, "Coffee_Intake_Binary"="Coffee_Intake_Binary", pred_col="prediction"
@@ -236,6 +228,10 @@ def objective(trial: optuna.Trial) -> float:
         )
         return val_f10
 
+# COMMAND ----------
+
+# DBTITLE 1,Hyperparameter tuning
+optuna.logging.set_verbosity(optuna.logging.ERROR)
 
 ### QUEST 5 SOLUTION START ###
 seed_params = {
@@ -247,24 +243,16 @@ seed_params = {
 }
 ### QUEST 5 SOLUTION END ###
 
-with mlflow.start_run(
-    experiment_id=exp_id, run_name="parent_run_optuna_hp", nested=True
-) as parent_run:
+with mlflow.start_run(experiment_id=exp_id, run_name="parent_run_optuna_hp", nested=True) as parent_run:
 
     # We define a study, which is a collection of trials
-    study = optuna.create_study(
-        direction="maximize", study_name="coffee_optuna_study"
-    )
+    study = optuna.create_study(direction="maximize", study_name="coffee_optuna_study")
+
     # We seed the starting parameters
     study.enqueue_trial(seed_params, skip_if_exists=True)
 
     # We run the study
-    study.optimize(
-        objective,
-        n_trials=5,
-        n_jobs=-1,
-        show_progress_bar=True,
-    )
+    study.optimize(objective, n_trials=5, n_jobs=-1, show_progress_bar=True)
 
     # We keep the best parameters from the best trial
     mlflow.log_params(study.best_params)
@@ -278,18 +266,7 @@ for key, value in study.best_params.items():
 best_params = study.best_params
 
 # Tuned model definition
-best_xgb = SparkXGBClassifier(
-    "Coffee_Intake_Binary"="Coffee_Intake_Binary",
-    features_col="features",
-    probability_col="probability",
-    raw_"prediction"="rawPrediction",
-    "prediction"="prediction",
-    seed=42,
-    tree_method="hist",
-    eval_metric="logloss",
-    **best_params,
-)
-
+best_xgb = SparkXGBClassifier(**base_xgb_params, **best_params)
 best_pipeline = Pipeline(stages=[*STAGES, best_xgb])
 
 # COMMAND ----------
