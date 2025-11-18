@@ -29,15 +29,7 @@ from mlflow import MlflowClient
 # Experiment name
 MLFLOW_EXPERIMENT_NAME = f"/Workspace/Users/{USER_EMAIL}/coffee_prod_predictions"
 
-# Disable autologging (because it can create extra experiments when fitting models in final run)
-mlflow.autolog(disable=True)
-
-exp = mlflow.get_experiment_by_name(MLFLOW_EXPERIMENT_NAME)
-if exp is None:
-    # If it doesn't exist, create it
-    exp_id = mlflow.create_experiment(MLFLOW_EXPERIMENT_NAME)
-
-mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
+exp_id = init_experiment(MLFLOW_EXPERIMENT_NAME)
 
 # COMMAND ----------
 

@@ -149,31 +149,9 @@ for split_name, split_df in [
 ]:
     print(f"{split_name.title()} split: {split_df.count():,} rows")
 
-indexers = [
-    StringIndexer(inputCol=c, outputCol=f"{c}_idx", handleInvalid="keep")
-    for c in categorical_cols
-]
-encoder = OneHotEncoder(
-    inputCols=[f"{c}_idx" for c in categorical_cols],
-    outputCols=[f"{c}_ohe" for c in categorical_cols],
-    handleInvalid="keep",
-    dropLast=True,
-)
+STAGES = build_preprocessing_stages(categorical_cols, numeric_cols)
 
-assembler_input_cols = numeric_cols + [f"{c}_ohe" for c in categorical_cols]
-assembler = VectorAssembler(
-    inputCols=assembler_input_cols, outputCol="features", handleInvalid="keep"
-)
-STAGES = indexers + [encoder, assembler]
-print("VectorAssembler inputs:", assembler_input_cols)
-
-mlflow.autolog(disable=True)
-exp = mlflow.get_experiment_by_name(MLFLOW_EXPERIMENT_NAME)
-if exp is None:
-    exp_id = mlflow.create_experiment(MLFLOW_EXPERIMENT_NAME)
-else:
-    exp_id = exp.experiment_id
-mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
+exp_id = init_experiment(MLFLOW_EXPERIMENT_NAME)
 
 # COMMAND ----------
 
@@ -276,12 +254,7 @@ with mlflow.start_run(
 
     mlflow.log_params(study.best_params)
     mlflow.log_metric("best_validation_f1", float(study.best_value))
-    mlflow.set_tags(
-        tags={
-            "project": "coffee_project_tag",
-            "optimizer_engine": "coffee_hp_tuning_tag",
-        }
-    )
+
 
 print(f"Best validation F1 (class 0): {study.best_value:.4f}")
 print("Best parameters:")
@@ -334,35 +307,8 @@ conf_mat_df = (
     .agg(F.count("*").alias("rows"))
     .orderBy("prediction", LABEL_COL)
 )
-conf_mat_pdf = conf_mat_df.toPandas()
-display(conf_mat_pdf)
-
-feature_name_mapping = get_feature_name_mapping(
-    best_model,
-    numeric_cols,
-    categorical_cols,
-)
-feature_importances = best_model.stages[-1].get_feature_importances()
-
-rows = []
-for i in range(len(feature_name_mapping)):
-    feature_key = f"f{i}"
-    feature_name = feature_name_mapping.get(feature_key, feature_key)
-    importance = float(feature_importances.get(f"f{i}", 0.0))
-    rows.append(
-        {
-            "Feature_Index": feature_key,
-            "Feature_Name": feature_name,
-            "Importance": importance,
-        }
-    )
-
-feature_importance_pdf = (
-    pd.DataFrame(rows)
-    .sort_values(by="Importance", ascending=False)
-    .reset_index(drop=True)
-)
-display(feature_importance_pdf)
+confusion_matrix_df = confusion_matrix_df.toPandas()
+display(confusion_matrix_pdf)
 
 # COMMAND ----------
 
@@ -413,15 +359,7 @@ with mlflow.start_run(run_name="coffee_xgb_best") as run:
             "test_f10": float(test_f10),
         }
     )
-    mlflow.log_table(conf_mat_pdf, "test_confusion_matrix.json")
-    mlflow.log_table(feature_importance_pdf, "xgb_feature_importances.json")
-    mlflow.set_tags(
-        tags={
-            "project": "coffee_project_tag",
-            "optimizer_engine": "coffee_hp_tuning_tag",
-            "production_model": True,
-        }
-    )
+    mlflow.log_table(confusion_matrix_pdf, "test_confusion_matrix.json")
 
 print(f"Test precision0: {test_prec0:.4f}")
 print(f"Test recall0: {test_rec0:.4f}")
@@ -504,6 +442,9 @@ with mlflow.start_run(run_name="coffee_xgb_best") as run:
 
     versions = client.search_model_versions(f"name = '{UC_MODEL_NAME}'")
     challenger_version = versions[0].version
+    client.set_registered_model_alias(
+        UC_MODEL_NAME, "challenger", challenger_version
+    )
 
     # TODO: Write promotion logic with aliases below
 

@@ -36,6 +36,7 @@ print(f"- PIP_REQUIREMENTS")
 
 # COMMAND ----------
 
+# DBTITLE 1,Evaluation function
 
 def class_zero_metrics(
     df, label_col: str, pred_col: str
@@ -55,72 +56,58 @@ def class_zero_metrics(
 
 # COMMAND ----------
 
-from pyspark.ml.feature import OneHotEncoderModel, StringIndexerModel
+# DBTITLE 1,Preprocessing pipeline function
+from pyspark.ml.feature import StringIndexer, OneHotEncoder, VectorAssembler
+
+def build_preprocessing_stages(categorical_cols, numeric_cols):
+    indexers = [
+        StringIndexer(inputCol=c, outputCol=f"{c}_idx", handleInvalid="keep")
+        for c in categorical_cols
+    ]
+    encoder = OneHotEncoder(
+        inputCols=[f"{c}_idx" for c in categorical_cols],
+        outputCols=[f"{c}_ohe" for c in categorical_cols],
+        handleInvalid="keep",
+        dropLast=True,
+    )
+
+    assembler_input_cols = numeric_cols + [f"{c}_ohe" for c in categorical_cols]
+    assembler = VectorAssembler(
+        inputCols=assembler_input_cols, outputCol="features", handleInvalid="keep"
+    )
+    stages = indexers + [encoder, assembler]
+    print("\n1. String Indexers, these convert text categories into numeric indices")
+    for c in categorical_cols:
+        print(f"   StringIndexer: {c} -> {c}_idx")
+    print()
+
+    print("2. One Hot Encoders, these turn each index into a vector of binary flags")
+    for c in categorical_cols:
+        print(f"   OneHotEncoder: {c}_idx -> {c}_ohe")
+    print()
+
+    print("3. Vector Assembler, this gathers all numeric and encoded features into a single feature vector")
+    all_inputs = numeric_cols + [c + "_ohe" for c in categorical_cols]
+    print(f"   VectorAssembler: {all_inputs} -> features\n")
+    return stages
 
 
-def get_feature_name_mapping(
-    pipeline_model,
-    numeric_columns,
-    ohe_columns,
-    index_only_columns=None,
-):
-    """
-    Create a mapping from generic feature indices (f0, f1, ...) to human-readable names.
-    Accounts for handleInvalid="keep" which adds an extra category to each OHE column.
-    """
-    feature_map = {}
-    feature_idx = 0
+# COMMAND ----------
 
-    # 1. Numeric columns (imputed)
-    for col in numeric_columns:
-        feature_map[f"f{feature_idx}"] = col
-        feature_idx += 1
+# DBTITLE 1,Experiment setup function
+import mlflow
 
-    # 2. One-hot encoded columns
-    if ohe_columns:
-        # Find the OneHotEncoder model
-        ohe_model = None
-        for stage in pipeline_model.stages:
-            if isinstance(stage, OneHotEncoderModel):
-                ohe_model = stage
-                break
+def init_experiment(experiment_name):
+    mlflow.autolog(disable=True)
 
-        if ohe_model:
-            for i, col_name in enumerate(ohe_columns):
-                # Find the StringIndexer stage for this column
-                indexer_col = f"{col_name}_idx"
-                indexer = None
-                for stage in pipeline_model.stages:
-                    if (
-                        isinstance(stage, StringIndexerModel)
-                        and stage.getOutputCol() == indexer_col
-                    ):
-                        indexer = stage
-                        break
+    exp = mlflow.get_experiment_by_name(experiment_name)
+    if exp is None:
+        exp_id = mlflow.create_experiment(experiment_name)
+    else:
+        exp_id = exp.experiment_id
 
-                if indexer:
-                    labels = indexer.labels
-                    # Use the actual category size (which includes "unknown" from handleInvalid="keep")
-                    num_features = ohe_model.categorySizes[i]
-
-                    # Create labels for each feature
-                    for j in range(num_features):
-                        if j < len(labels):
-                            label = labels[j]
-                        else:
-                            # This is the extra "unknown" category
-                            label = "Unknown"
-                        feature_map[f"f{feature_idx}"] = f"{col_name}_{label}"
-                        feature_idx += 1
-
-    # 3. Indexed-only columns
-    if index_only_columns:
-        for col_name in index_only_columns:
-            feature_map[f"f{feature_idx}"] = col_name
-            feature_idx += 1
-
-    return feature_map
-
+    mlflow.set_experiment(experiment_name)
+    return exp_id
 
 # COMMAND ----------
 
