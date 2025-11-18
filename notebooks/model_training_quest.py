@@ -172,7 +172,7 @@ load_hint("model_training", "quest_4")
 
 # COMMAND ----------
 
-# DBTITLE 1,Common model parameters
+# DBTITLE 1,Standard model parameters
 base_xgb_params = {
     "label_col": "Coffee_Intake_Binary",
     "features_col": "features",
@@ -212,7 +212,7 @@ def objective(trial: optuna.Trial) -> float:
         val_predictions = model.transform(valid_df).select("Coffee_Intake_Binary", "prediction")
 
         val_precision0, val_recall0, val_f10 = class_zero_metrics(
-            val_predictions, "Coffee_Intake_Binary"="Coffee_Intake_Binary", pred_col="prediction"
+            df=val_predictions, label_col="Coffee_Intake_Binary", pred_col="prediction"
         )
 
         mlflow.log_params(params)
@@ -289,7 +289,7 @@ best_model = best_pipeline.fit(...)  # TODO replace placeholder
 
 test_pred_df = best_model.transform(...)  # TODO replace placeholder
 test_prec0, test_rec0, test_f10 = class_zero_metrics(
-    test_pred_df, "Coffee_Intake_Binary", "prediction"
+    df=test_pred_df, label_col="Coffee_Intake_Binary", pred_col="prediction"
 )
 
 confusion_matrix_df = (
@@ -396,7 +396,7 @@ champion_model = mlflow.spark.load_model(f"models:/{f"{CATALOG}.{MY_SCHEMA}.coff
 # Evaluate the Champion model on the new data
 champion_predictions_df = best_model.transform(new_data_for_testing)
 champion_precision, champion_recall, champion_f1 = class_zero_metrics(
-    champion_predictions_df, "Coffee_Intake_Binary", "prediction"
+    df=champion_predictions_df, label_col="Coffee_Intake_Binary", pred_col="prediction"
 )
 # Store current Champion info
 champ_info = client.get_model_version_by_alias(f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model", "champion")
@@ -408,7 +408,7 @@ challenger_predictions_df = challenger_model.transform(new_data_for_testing)
 
 # Evaluate the Challenger model on the new data
 challenger_precision, challenger_recall, challenger_f1 = class_zero_metrics(
-    challenger_predictions_df, "Coffee_Intake_Binary", "prediction"
+    df=challenger_predictions_df, label_col="Coffee_Intake_Binary", pred_col"prediction"
 )
 
 # Log Challenger model
