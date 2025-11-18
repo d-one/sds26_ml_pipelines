@@ -515,7 +515,7 @@ HINTS = {
     ): """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
-          <p>Reuse the feature lists you derived in Quest 1.</p>
+          <p>Reuse the feature list you derived in Quest 1.</p>
         </details>
         <details class="hintbox">
           <summary>Just show me the answer… 🫠</summary>
