@@ -1,4 +1,5 @@
 # Databricks notebook source
+# DBTITLE 1,Settings & Configuration
 import os
 import re
 from typing import Tuple
@@ -36,8 +37,7 @@ print(f"- PIP_REQUIREMENTS")
 
 # COMMAND ----------
 
-# DBTITLE 1,Evaluation function
-
+# DBTITLE 1,Function: class_zero_metrics
 def class_zero_metrics(
     df, label_col: str, pred_col: str
 ) -> Tuple[float, float, float]:
@@ -56,7 +56,7 @@ def class_zero_metrics(
 
 # COMMAND ----------
 
-# DBTITLE 1,Preprocessing pipeline function
+# DBTITLE 1,Function: build_preprocessing_stages
 from pyspark.ml.feature import StringIndexer, OneHotEncoder, VectorAssembler
 
 def build_preprocessing_stages(categorical_cols, numeric_cols):
@@ -94,10 +94,10 @@ def build_preprocessing_stages(categorical_cols, numeric_cols):
 
 # COMMAND ----------
 
-# DBTITLE 1,Experiment setup function
+# DBTITLE 1,Function: setup_experiment
 import mlflow
 
-def init_experiment(experiment_name):
+def setup_experiment(experiment_name):
     mlflow.autolog(disable=True)
 
     exp = mlflow.get_experiment_by_name(experiment_name)
@@ -111,7 +111,7 @@ def init_experiment(experiment_name):
 
 # COMMAND ----------
 
-
+# DBTITLE 1,Functions: clean up functions
 def _drop_table_if_exists(table_path: str, label: str) -> None:
     if not table_path:
         return
@@ -637,8 +637,7 @@ HINTS = {
 
 # COMMAND ----------
 
-# DBTITLE 1,load_hint
-
+# DBTITLE 1,Function: load_hint
 def load_hint(notebook, quest_id):
     base_css = """
     <style>

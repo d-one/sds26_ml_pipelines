@@ -153,7 +153,7 @@ for split_name, split_df in [
 # Assemble preprocessing steps once so every model trial reuses them
 STAGES = build_preprocessing_stages(categorical_cols, numeric_cols)
 
-exp_id = init_experiment(f"/Workspace/Users/{USER_EMAIL}/coffee_hp_tuning_experiment")
+exp_id = setup_experiment(f"/Workspace/Users/{USER_EMAIL}/coffee_hp_tuning_experiment")
 
 # COMMAND ----------
 
