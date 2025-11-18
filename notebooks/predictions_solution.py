@@ -27,11 +27,9 @@ from mlflow import MlflowClient
 
 # DBTITLE 1,Experiment setup
 # Experiment name
-MLFLOW_EXPERIMENT_NAME = (
-    f"/Workspace/Users/{USER_EMAIL}/coffee_prod_predictions"
-)
+MLFLOW_EXPERIMENT_NAME = f"/Workspace/Users/{USER_EMAIL}/coffee_prod_predictions"
 
-exp_id = init_experiment(MLFLOW_EXPERIMENT_NAME)
+exp_id = setup_experiment(MLFLOW_EXPERIMENT_NAME)
 
 # COMMAND ----------
 
@@ -125,7 +123,7 @@ with mlflow.start_run(run_name=run_name) as run:
         targets="Coffee_Intake_Binary",
         model_type="classifier",
         evaluators=["default"],
-        evaluator_config={"default": {"pos_label": 0}},
+        evaluator_config={"default": {"pos_label": 0}}
     )
 
 
@@ -138,9 +136,6 @@ with mlflow.start_run(run_name=run_name) as run:
 
 # DBTITLE 1,Save predictions table
 PREDICTIONS_TABLE_PATH = f"{CATALOG}.{MY_SCHEMA}.coffee_predictions"
-predictions_df.write.format("delta").mode("overwrite").saveAsTable(
-    PREDICTIONS_TABLE_PATH
-)
-print(
-    f"DataFrame predictions_df has been written to table:\n\t- {PREDICTIONS_TABLE_PATH}"
-)
+predictions_df.write.format("delta").mode("overwrite").saveAsTable(PREDICTIONS_TABLE_PATH)
+
+print(f"DataFrame predictions_df has been written to table:\n\t- {PREDICTIONS_TABLE_PATH}")

@@ -465,3 +465,9 @@ with mlflow.start_run(run_name="coffee_xgb_best") as run:
 # MAGIC %md
 # MAGIC ## Bonus question!
 # MAGIC Would you do anything different about the training of our final model?...
+
+# COMMAND ----------
+
+df1 = spark.table("gtc25_ml_catalog.source_data.coffee_labeled_fact")
+df2 = spark.table("gtc25_ml_catalog.source_data.coffee_labeled_features")
+df3 = spark.table("gtc25_ml_catalog.source_data.coffee_prod_holdout")
