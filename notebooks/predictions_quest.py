@@ -120,7 +120,7 @@ with mlflow.start_run(run_name=run_name) as run:
     results = mlflow.models.evaluate(
         CHAMPION_MODEL_URI,
         holdout_df,
-        targets="Coffee_Intake_Binary",
+        targets="Coffee_Drinker",
         model_type="classifier",
         evaluators=["default"],
         evaluator_config={"default": {"pos_label": 0}}

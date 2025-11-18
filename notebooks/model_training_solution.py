@@ -52,7 +52,7 @@ load_hint("model_training", "quest_1")
 # COMMAND ----------
 
 # DBTITLE 1,Feature categories
-FACT_COLUMNS = ["Coffee_Intake_Binary", "ID", "Timestamp"]
+FACT_COLUMNS = ["Coffee_Drinker", "ID", "Timestamp"]
 # Keep label + identifiers out of the auto-generated feature lists
 coffee_labeled_df = spark.table(f"{CATALOG}.{SCHEMA_WITH_SOURCE_DATA}.coffee_labeled_features")
 data_schema_fields = coffee_labeled_df.schema.fields
@@ -118,7 +118,7 @@ feature_lookup = FeatureLookup(
 training_set = fe.create_training_set(
     df=labeled_fact_df,
     feature_lookups=[feature_lookup],  # QUEST 2 SOLUTION
-    label="Coffee_Intake_Binary",
+    label="Coffee_Drinker",
 )
 
 full_labeled_df = training_set.load_df()
@@ -177,7 +177,7 @@ load_hint("model_training", "quest_4")
 
 # DBTITLE 1,Standard model parameters
 base_xgb_params = {
-    "label_col": "Coffee_Intake_Binary",
+    "label_col": "Coffee_Drinker",
     "features_col": "features",
     "probability_col": "probability",
     "raw_prediction": "rawPrediction",
@@ -212,10 +212,10 @@ def objective(trial: optuna.Trial) -> float:
         pipeline = Pipeline(stages=[*STAGES, xgb])
         model = pipeline.fit(train_df)
 
-        val_predictions = model.transform(valid_df).select("Coffee_Intake_Binary", "prediction")
+        val_predictions = model.transform(valid_df).select("Coffee_Drinker", "prediction")
 
         val_precision0, val_recall0, val_f10 = class_zero_metrics(
-            df=val_predictions, label_col="Coffee_Intake_Binary", pred_col="prediction"
+            df=val_predictions, label_col="Coffee_Drinker", pred_col="prediction"
         )
 
         mlflow.log_params(params)
@@ -292,13 +292,13 @@ best_model = best_pipeline.fit(train_val_df)  # QUEST 5 SOLUTION
 
 test_pred_df = best_model.transform(test_df)  # QUEST 5 SOLUTION
 test_prec0, test_rec0, test_f10 = class_zero_metrics(
-    df=test_pred_df, label_col="Coffee_Intake_Binary", pred_col="prediction"
+    df=test_pred_df, label_col="Coffee_Drinker", pred_col="prediction"
 )
 
 confusion_matrix_df = (
-    test_pred_df.groupBy("prediction", "Coffee_Intake_Binary")
+    test_pred_df.groupBy("prediction", "Coffee_Drinker")
     .agg(F.count("*").alias("rows"))
-    .orderBy("prediction", "Coffee_Intake_Binary")
+    .orderBy("prediction", "Coffee_Drinker")
 )
 confusion_matrix_pdf = confusion_matrix_df.toPandas()
 display(confusion_matrix_pdf)
@@ -324,7 +324,7 @@ client = MlflowClient()
 with mlflow.start_run(run_name="coffee_xgb_best") as run:
 
     # Capture a schema example so MLflow can store model signature/input
-    sample_inf_df = full_labeled_df.drop("Coffee_Intake_Binary").limit(1)
+    sample_inf_df = full_labeled_df.drop("Coffee_Drinker").limit(1)
     sample_pred_df = best_model.transform(sample_inf_df).select(
         sample_inf_df.columns + ["prediction"]
     )
@@ -401,7 +401,7 @@ champion_model = mlflow.spark.load_model(f"models:/{f"{CATALOG}.{MY_SCHEMA}.coff
 # Evaluate the Champion model on the new data
 champion_predictions_df = best_model.transform(new_data_for_testing)
 champion_precision, champion_recall, champion_f1 = class_zero_metrics(
-    df=champion_predictions_df, label_col="Coffee_Intake_Binary", pred_col="prediction"
+    df=champion_predictions_df, label_col="Coffee_Drinker", pred_col="prediction"
 )
 # Store current Champion info
 champ_info = client.get_model_version_by_alias(f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model", "champion")
@@ -413,14 +413,14 @@ challenger_predictions_df = challenger_model.transform(new_data_for_testing)
 
 # Evaluate the Challenger model on the new data
 challenger_precision, challenger_recall, challenger_f1 = class_zero_metrics(
-    df=challenger_predictions_df, label_col="Coffee_Intake_Binary", pred_col="prediction"
+    df=challenger_predictions_df, label_col="Coffee_Drinker", pred_col="prediction"
 )
 
 # Log Challenger model
 with mlflow.start_run(run_name="coffee_xgb_best") as run:
 
     # Capture a signature snapshot for the challenger as well
-    sample_inf_df = updated_df.drop("Coffee_Intake_Binary").limit(1)
+    sample_inf_df = updated_df.drop("Coffee_Drinker").limit(1)
     sample_pred_df = challenger_model.transform(sample_inf_df).select(
         sample_inf_df.columns + ["prediction"]
     )
@@ -465,9 +465,3 @@ with mlflow.start_run(run_name="coffee_xgb_best") as run:
 # MAGIC %md
 # MAGIC ## Bonus question!
 # MAGIC Would you do anything different about the training of our final model?...
-
-# COMMAND ----------
-
-df1 = spark.table("gtc25_ml_catalog.source_data.coffee_labeled_fact")
-df2 = spark.table("gtc25_ml_catalog.source_data.coffee_labeled_features")
-df3 = spark.table("gtc25_ml_catalog.source_data.coffee_prod_holdout")
