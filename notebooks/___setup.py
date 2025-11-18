@@ -501,7 +501,7 @@ HINTS = {
         </details>
         <details class="hintbox">
           <summary>Just show me the answer… 🫠</summary>
-          <p>Run this block of code before moving on:</p>
+          <p>Run this block of code <b> after the execution of the cell below</b> before moving on:</p>
           <div class="code-block">
             <span class="variable">numeric_cols</span><span class="operator">.</span><span class="function">remove</span><span class="bracket">(</span><span class="string">"Alcohol_Consumption"</span><span class="bracket">)<br></span>
             <span class="variable">numeric_cols</span><span class="operator">.</span><span class="function">remove</span><span class="bracket">(</span><span class="string">"Smoking"</span><span class="bracket">)<br></span>

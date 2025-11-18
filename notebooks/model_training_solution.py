@@ -35,17 +35,6 @@ from xgboost.spark import SparkXGBClassifier
 
 # COMMAND ----------
 
-# DBTITLE 1,Constants
-LABEL_COL = "Coffee_Intake_Binary"
-PREDICTION_COL = "prediction"
-
-MLFLOW_EXPERIMENT_NAME = (
-    f"/Workspace/Users/{USER_EMAIL}/coffee_hp_tuning_experiment"
-)
-UC_MODEL_NAME = f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model"
-
-# COMMAND ----------
-
 # MAGIC %md
 # MAGIC ## Quest 1 · Define Feature Categories
 # MAGIC **Goal:** detect numeric and categorical columns from the labeled dataset.
@@ -65,7 +54,7 @@ load_hint("model_training", "quest_1")
 # DBTITLE 1,Feature categories
 BASE_COLUMNS = ["Coffee_Intake_Binary", "ID", "Timestamp"]
 # Keep label + identifiers out of the auto-generated feature lists
-coffee_labeled_df = spark.table(f"{CATALOG}.{MY_SCHEMA}.coffee_labeled")
+coffee_labeled_df = spark.table(f"{CATALOG}.{SCHEMA_WITH_SOURCE_DATA}.coffee_labeled_features")
 data_schema_fields = coffee_labeled_df.schema.fields
 
 numeric_cols = [
@@ -113,11 +102,11 @@ load_hint("model_training", "quest_2")
 
 # DBTITLE 1,Loading the training set
 fe = FeatureEngineeringClient()
-labeled_fact_df = spark.table(f"{CATALOG}.{MY_SCHEMA}.coffee_labeled_fact")
+labeled_fact_df = spark.table(f"{CATALOG}.{SCHEMA_WITH_SOURCE_DATA}.coffee_labeled_fact")
 
 # Compose a Feature Lookup that pulls engineered columns by key + timestamp
 feature_lookup = FeatureLookup(
-    table_name=f"{CATALOG}.{MY_SCHEMA}.coffee_features",
+    table_name=f"{CATALOG}.{SCHEMA_WITH_SOURCE_DATA}.coffee_labeled_features",
     feature_names=all_feature_cols,  # QUEST 2 SOLUTION
     lookup_key="ID",
     timestamp_lookup_key="Timestamp",
@@ -127,7 +116,7 @@ feature_lookup = FeatureLookup(
 training_set = fe.create_training_set(
     df=labeled_fact_df,
     feature_lookups=[feature_lookup],  # QUEST 2 SOLUTION
-    label=LABEL_COL,
+    label="Coffee_Intake_Binary",
 )
 
 full_labeled_df = training_set.load_df()
@@ -139,6 +128,8 @@ full_labeled_df = training_set.load_df()
 # MAGIC **Goal:** create data splits, build preprocessing stages, and configure the MLflow experiment.
 # MAGIC
 # MAGIC What do you thing is a good split?
+# MAGIC
+# MAGIC You only need to replace the `...` placeholders.
 # MAGIC
 # MAGIC Need a nudge? Use the hint loader below.
 
@@ -163,7 +154,7 @@ for split_name, split_df in [
 # Assemble preprocessing steps once so every model trial reuses them
 STAGES = build_preprocessing_stages(categorical_cols, numeric_cols)
 
-exp_id = init_experiment(MLFLOW_EXPERIMENT_NAME)
+exp_id = init_experiment(f"/Workspace/Users/{USER_EMAIL}/coffee_hp_tuning_experiment")
 
 # COMMAND ----------
 
@@ -172,6 +163,8 @@ exp_id = init_experiment(MLFLOW_EXPERIMENT_NAME)
 # MAGIC **Goal:** run Optuna with a head start!
 # MAGIC
 # MAGIC What starting parameters should we use, if any at all? How would you decide?
+# MAGIC
+# MAGIC The only thing you need to do is to fill the `seed_params` dictionary.
 
 # COMMAND ----------
 
@@ -210,11 +203,11 @@ def objective(trial: optuna.Trial) -> float:
         }
 
         xgb = SparkXGBClassifier(
-            label_col=LABEL_COL,
+            "Coffee_Intake_Binary"="Coffee_Intake_Binary",
             features_col="features",
             probability_col="probability",
-            raw_prediction_col="rawPrediction",
-            prediction_col=PREDICTION_COL,
+            raw_"prediction"="rawPrediction",
+            "prediction"="prediction",
             seed=42,
             tree_method="hist",
             eval_metric="logloss",
@@ -224,11 +217,11 @@ def objective(trial: optuna.Trial) -> float:
         pipeline = Pipeline(stages=[*STAGES, xgb])
         model = pipeline.fit(train_df)
         val_predictions = model.transform(valid_df).select(
-            LABEL_COL, PREDICTION_COL
+            "Coffee_Intake_Binary", "prediction"
         )
 
         val_precision0, val_recall0, val_f10 = class_zero_metrics(
-            val_predictions, label_col=LABEL_COL, pred_col=PREDICTION_COL
+            val_predictions, "Coffee_Intake_Binary"="Coffee_Intake_Binary", pred_col="prediction"
         )
 
         mlflow.log_params(params)
@@ -284,11 +277,11 @@ best_params = study.best_params
 
 # Tuned model definition
 best_xgb = SparkXGBClassifier(
-    label_col=LABEL_COL,
+    "Coffee_Intake_Binary"="Coffee_Intake_Binary",
     features_col="features",
     probability_col="probability",
-    raw_prediction_col="rawPrediction",
-    prediction_col=PREDICTION_COL,
+    raw_"prediction"="rawPrediction",
+    "prediction"="prediction",
     seed=42,
     tree_method="hist",
     eval_metric="logloss",
@@ -302,6 +295,8 @@ best_pipeline = Pipeline(stages=[*STAGES, best_xgb])
 # MAGIC %md
 # MAGIC ## Quest 5 · Evaluate the Tuned Model
 # MAGIC **Goal:** fit the best parameters on train+validation, score the test set, and report feature importances.
+# MAGIC
+# MAGIC You only need to replace the `...` placeholders.
 # MAGIC
 # MAGIC Need a nudge? Use the hint loader below.
 
@@ -319,13 +314,13 @@ best_model = best_pipeline.fit(train_val_df)  # QUEST 5 SOLUTION
 
 test_pred_df = best_model.transform(test_df)  # QUEST 5 SOLUTION
 test_prec0, test_rec0, test_f10 = class_zero_metrics(
-    test_pred_df, LABEL_COL, PREDICTION_COL
+    test_pred_df, "Coffee_Intake_Binary", "prediction"
 )
 
 confusion_matrix_df = (
-    test_pred_df.groupBy("prediction", LABEL_COL)
+    test_pred_df.groupBy("prediction", "Coffee_Intake_Binary")
     .agg(F.count("*").alias("rows"))
-    .orderBy("prediction", LABEL_COL)
+    .orderBy("prediction", "Coffee_Intake_Binary")
 )
 confusion_matrix_pdf = confusion_matrix_df.toPandas()
 display(confusion_matrix_pdf)
@@ -335,6 +330,8 @@ display(confusion_matrix_pdf)
 # MAGIC %md
 # MAGIC ## Quest 6 · Register the Final Model
 # MAGIC **Goal:** log artifacts to MLflow, and manage UC aliases.
+# MAGIC
+# MAGIC No need to do anything here, just study a bit the cell and run it.
 
 # COMMAND ----------
 
@@ -359,17 +356,16 @@ with mlflow.start_run(run_name="coffee_xgb_best") as run:
     mlflow_model_info = mlflow.spark.log_model(
         spark_model=best_model,
         artifact_path="spark-model-full-data",
-        registered_model_name=UC_MODEL_NAME,
+        registered_model_name=f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model",
         pip_requirements=PIP_REQUIREMENTS,
         signature=signature,
-        input_example=sample_inf_df,
     )
 
-    versions = client.search_model_versions(f"name = '{UC_MODEL_NAME}'")
+    versions = client.search_model_versions(f"name = '{f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model"}'")
     champion_version = versions[0].version
 
     client.set_registered_model_alias(
-        UC_MODEL_NAME, "champion", champion_version
+        f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model", "champion", champion_version
     )
 
     mlflow.log_params(best_params)
@@ -400,6 +396,10 @@ print("Final XGBoost model trained on full dataset and logged to MLflow.")
 # MAGIC You can **use the previous cell's logic**, but what would you change?
 # MAGIC
 # MAGIC You do not need to use mlflow to log metrics and set tags for this task (lines `28-44` in previous cell).
+# MAGIC
+# MAGIC Write the logic below the final `TODO:` comment of the cell.
+# MAGIC
+# MAGIC
 
 # COMMAND ----------
 
@@ -418,15 +418,15 @@ updated_df = train_val_df.unionByName(new_data_for_training)
 print(f"Updated data rows: {updated_df.count():,}")
 
 # Load Champion model by using its alias
-champion_model = mlflow.spark.load_model(f"models:/{UC_MODEL_NAME}@champion")
+champion_model = mlflow.spark.load_model(f"models:/{f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model"}@champion")
 
 # Evaluate the Champion model on the new data
 champion_predictions_df = best_model.transform(new_data_for_testing)
 champion_precision, champion_recall, champion_f1 = class_zero_metrics(
-    champion_predictions_df, LABEL_COL, PREDICTION_COL
+    champion_predictions_df, "Coffee_Intake_Binary", "prediction"
 )
 # Store current Champion info
-champ_info = client.get_model_version_by_alias(UC_MODEL_NAME, "champion")
+champ_info = client.get_model_version_by_alias(f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model", "champion")
 champion_version = champ_info.version
 
 # Train the Challenger model on the updated data
@@ -435,7 +435,7 @@ challenger_predictions_df = challenger_model.transform(new_data_for_testing)
 
 # Evaluate the Challenger model on the new data
 challenger_precision, challenger_recall, challenger_f1 = class_zero_metrics(
-    challenger_predictions_df, LABEL_COL, PREDICTION_COL
+    challenger_predictions_df, "Coffee_Intake_Binary", "prediction"
 )
 
 # Log Challenger model
@@ -452,26 +452,26 @@ with mlflow.start_run(run_name="coffee_xgb_best") as run:
     mlflow_model_info = mlflow.spark.log_model(
         spark_model=challenger_model,
         artifact_path="spark-model-full-data",
-        registered_model_name=UC_MODEL_NAME,
+        registered_model_name=f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model",
         pip_requirements=PIP_REQUIREMENTS,
         signature=signature,
     )
 
-    versions = client.search_model_versions(f"name = '{UC_MODEL_NAME}'")
+    versions = client.search_model_versions(f"name = '{f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model"}'")
     challenger_version = versions[0].version
     client.set_registered_model_alias(
-        UC_MODEL_NAME, "challenger", challenger_version
+        f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model", "challenger", challenger_version
     )
 
     ### QUEST 7 SOLUTION START ###
     if challenger_f1 > champion_f1:
         # This automatically removes the champion alias from the previous version
         client.set_registered_model_alias(
-            UC_MODEL_NAME, "champion", challenger_version
+            f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model", "champion", challenger_version
         )
         # Mark the previous champion
         client.set_registered_model_alias(
-            UC_MODEL_NAME, "previous_champion", champion_version
+            f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model", "previous_champion", champion_version
         )
         print(
             f"Challenger wins! Model version {challenger_version} is now the new champion."
