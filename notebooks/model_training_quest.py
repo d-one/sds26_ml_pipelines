@@ -79,6 +79,11 @@ coffee_labeled_df.limit(10).display()
 
 # COMMAND ----------
 
+# DBTITLE 1,Quest 1 solution
+# Fill in here
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ## Quest 2 · Prepare the Feature Store Training Set
 # MAGIC **Goal:** load the fact table and build a Feature Store training set that joins in features.
@@ -169,14 +174,14 @@ load_hint("model_training", "quest_4")
 
 # DBTITLE 1,Common model parameters
 base_xgb_params = {
-    label_col: "Coffee_Intake_Binary",
-    features_col: "features",
-    probability_col: "probability",
-    raw_prediction: "rawPrediction",
-    prediction: "prediction",
-    seed: 42,
-    tree_method: "hist",
-    eval_metric: "logloss",
+    "label_col": "Coffee_Intake_Binary",
+    "features_col": "features",
+    "probability_col": "probability",
+    "raw_prediction": "rawPrediction",
+    "prediction": "prediction",
+    "seed": 42,
+    "tree_method": "hist",
+    "eval_metric": "logloss",
 }
 
 # COMMAND ----------
@@ -225,7 +230,7 @@ def objective(trial: optuna.Trial) -> float:
 # DBTITLE 1,Hyperparameter tuning
 optuna.logging.set_verbosity(optuna.logging.ERROR)
 
-# TODO: choose your starting hyperparameters
+# TODO: Fill in the placeholders in the below dictionary to complete Quest 4
 seed_params = {
     "eta": ...,  # also known as learning rate
     "colsample_bytree": ...,

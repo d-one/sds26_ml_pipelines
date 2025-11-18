@@ -79,7 +79,7 @@ coffee_labeled_df.limit(10).display()
 
 # COMMAND ----------
 
-# QUEST 1 SOLUTION
+# DBTITLE 1,Quest 1 solution
 numeric_cols.remove("Alcohol_Consumption")
 numeric_cols.remove("Smoking")
 
@@ -177,14 +177,14 @@ load_hint("model_training", "quest_4")
 
 # DBTITLE 1,Common model parameters
 base_xgb_params = {
-    label_col: "Coffee_Intake_Binary",
-    features_col: "features",
-    probability_col: "probability",
-    raw_prediction: "rawPrediction",
-    prediction: "prediction",
-    seed: 42,
-    tree_method: "hist",
-    eval_metric: "logloss",
+    "label_col": "Coffee_Intake_Binary",
+    "features_col": "features",
+    "probability_col": "probability",
+    "raw_prediction": "rawPrediction",
+    "prediction": "prediction",
+    "seed": 42,
+    "tree_method": "hist",
+    "eval_metric": "logloss",
 }
 
 # COMMAND ----------
@@ -233,7 +233,7 @@ def objective(trial: optuna.Trial) -> float:
 # DBTITLE 1,Hyperparameter tuning
 optuna.logging.set_verbosity(optuna.logging.ERROR)
 
-### QUEST 5 SOLUTION START ###
+# QUEST 4 SOLUTION
 seed_params = {
     "eta": 0.05759496965676729,
     "colsample_bytree": 0.6263993741226758,
@@ -241,7 +241,6 @@ seed_params = {
     "min_child_weight": 5.0,
     "subsample": 0.6616262667209235,
 }
-### QUEST 5 SOLUTION END ###
 
 with mlflow.start_run(experiment_id=exp_id, run_name="parent_run_optuna_hp", nested=True) as parent_run:
 
