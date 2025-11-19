@@ -22,6 +22,8 @@
 # DBTITLE 1,Imports
 import mlflow
 from mlflow import MlflowClient
+from pyspark.ml import Pipeline
+from xgboost.spark import SparkXGBClassifier
 
 # COMMAND ----------
 
@@ -45,7 +47,7 @@ print(f"Loaded holdout table with {holdout_df.count():,} rows.")
 # MAGIC
 # MAGIC It is time to load the model that we trained in the previous notebook and use it to make predictions on unseen data!
 # MAGIC
-# MAGIC Can you complete the missing alias to load the model?
+# MAGIC > Can you complete the missing alias to load the model?
 # MAGIC
 # MAGIC [Databricks Documentation for Model Aliases](https://docs.databricks.com/aws/en/machine-learning/manage-model-lifecycle/#use-model-aliases)
 # MAGIC
@@ -82,9 +84,13 @@ print(f"DataFrame predictions_df has been written to table:\n\t- {PREDICTIONS_TA
 # MAGIC
 # MAGIC You used the model to make predictions on the holdout dataset.
 # MAGIC
-# MAGIC **1.** What columns where added by the model?
+# MAGIC **Question 1**
 # MAGIC
-# MAGIC **2.** Could you explain what they are?
+# MAGIC > What columns where added by the model?
+# MAGIC
+# MAGIC **Question 2**
+# MAGIC
+# MAGIC > Could you explain what they are?
 # MAGIC
 
 # COMMAND ----------
