@@ -157,6 +157,10 @@ with mlflow.start_run(run_name=run_name):
 # MAGIC
 # MAGIC We are going to train a new version of the model, using the updated dataset, and compare its performance with a previous champion.
 # MAGIC
+# MAGIC <br>
+# MAGIC
+# MAGIC <img src="../img/duel.png" width="600">
+# MAGIC
 # MAGIC The code in the following cell:
 # MAGIC - Unites the dataset into one big Spark DataFrame, and then splits it into a Train DataFrame and a Test DataFrame.
 # MAGIC - Creates an Experiment
