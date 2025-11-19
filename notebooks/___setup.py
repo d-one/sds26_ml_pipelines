@@ -37,6 +37,32 @@ print(f"- PIP_REQUIREMENTS")
 
 # COMMAND ----------
 
+# DBTITLE 1,Column categories
+NUMERICAL_COLUMNS = [
+    "Age",
+    "Sleep_Hours",
+    "BMI",
+    "Heart_Rate",
+    "Physical_Activity_Hours",
+    "Work_Hours_Per_Week",
+    "Tea_Consumption_Per_Day_ml",
+    "Energy_Drink_Consumption_ml",
+]
+CATEGORICAL_COLUMNS = [
+    "Gender",
+    "Sleep_Quality",
+    "Stress_Level",
+    "Health_Issues",
+    "Occupation",
+    "Breakfast_Type",
+    "Alcohol_Consumption",
+    "Smoking"
+]
+
+FEATURE_COLUMNS = NUMERICAL_COLUMNS + CATEGORICAL_COLUMNS
+
+# COMMAND ----------
+
 # DBTITLE 1,Function: class_zero_metrics
 def class_zero_metrics(
     df, label_col: str, pred_col: str
@@ -59,35 +85,35 @@ def class_zero_metrics(
 # DBTITLE 1,Function: build_preprocessing_stages
 from pyspark.ml.feature import StringIndexer, OneHotEncoder, VectorAssembler
 
-def build_preprocessing_stages(categorical_cols, numeric_cols):
+def build_preprocessing_stages():
     indexers = [
         StringIndexer(inputCol=c, outputCol=f"{c}_idx", handleInvalid="keep")
-        for c in categorical_cols
+        for c in CATEGORICAL_COLUMNS
     ]
     encoder = OneHotEncoder(
-        inputCols=[f"{c}_idx" for c in categorical_cols],
-        outputCols=[f"{c}_ohe" for c in categorical_cols],
+        inputCols=[f"{c}_idx" for c in CATEGORICAL_COLUMNS],
+        outputCols=[f"{c}_ohe" for c in CATEGORICAL_COLUMNS],
         handleInvalid="keep",
         dropLast=True,
     )
 
-    assembler_input_cols = numeric_cols + [f"{c}_ohe" for c in categorical_cols]
+    assembler_input_cols = NUMERICAL_COLUMNS + [f"{c}_ohe" for c in CATEGORICAL_COLUMNS]
     assembler = VectorAssembler(
         inputCols=assembler_input_cols, outputCol="features", handleInvalid="keep"
     )
     stages = indexers + [encoder, assembler]
     print("\n1. String Indexers, these convert text categories into numeric indices")
-    for c in categorical_cols:
+    for c in CATEGORICAL_COLUMNS:
         print(f"   StringIndexer: {c} -> {c}_idx")
     print()
 
     print("2. One Hot Encoders, these turn each index into a vector of binary flags")
-    for c in categorical_cols:
+    for c in CATEGORICAL_COLUMNS:
         print(f"   OneHotEncoder: {c}_idx -> {c}_ohe")
     print()
 
     print("3. Vector Assembler, this gathers all numeric and encoded features into a single feature vector")
-    all_inputs = numeric_cols + [c + "_ohe" for c in categorical_cols]
+    all_inputs = NUMERICAL_COLUMNS + [c + "_ohe" for c in CATEGORICAL_COLUMNS]
     print(f"   VectorAssembler: {all_inputs} -> features\n")
     return stages
 
@@ -481,27 +507,6 @@ HINTS = {
     ): """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
-          <ul>
-            <li>Look at the columns: <code><span class="string">"Alcohol_Consumption"</span></code>  and <code><span class="string">"Smoking"</span></code></li>
-            <li>Do they look like numeric columns?</li>
-          </ul>
-        </details>
-        <details class="hintbox">
-          <summary>Just show me the answer… 🫠</summary>
-          <p>Run this block of code <b> after the execution of the cell below</b> before moving on:</p>
-          <div class="code-block">
-            <span class="variable">numeric_cols</span><span class="operator">.</span><span class="function">remove</span><span class="bracket">(</span><span class="string">"Alcohol_Consumption"</span><span class="bracket">)<br></span>
-            <span class="variable">numeric_cols</span><span class="operator">.</span><span class="function">remove</span><span class="bracket">(</span><span class="string">"Smoking"</span><span class="bracket">)<br></span>
-            <span class="variable">categorical_cols</span> <span class="operator">+=</span> <span class="bracket">[</span><span class="string">"Alcohol_Consumption"</span><span class="operator">,</span> <span class="string">"Smoking"</span><span class="bracket">]</span>
-          </div>
-        </details>
-        """,
-    (
-        "model_training",
-        "quest_2",
-    ): """
-        <details class="hintbox">
-          <summary>Show me the hint!</summary>
           <p>Reuse the feature list you derived in Quest 1.</p>
         </details>
         <details class="hintbox">
@@ -515,7 +520,7 @@ HINTS = {
         """,
     (
         "model_training",
-        "quest_3",
+        "quest_2",
     ): """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
@@ -532,7 +537,7 @@ HINTS = {
         """,
     (
         "model_training",
-        "quest_4",
+        "quest_3",
     ): """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
@@ -553,7 +558,7 @@ HINTS = {
         """,
     (
         "model_training",
-        "quest_5",
+        "quest_4",
     ): """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
@@ -580,7 +585,7 @@ HINTS = {
         """,
     (
         "model_training",
-        "quest_6",
+        "quest_5",
     ): """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
@@ -589,35 +594,6 @@ HINTS = {
         <details class="hintbox">
           <summary>Just show me the answer… 🫠</summary>
           <p>Seriously, just run it 🚀</p>
-        </details>
-        """,
-    (
-        "model_training",
-        "quest_7",
-    ): """
-        <details class="hintbox">
-          <summary>Show me the hint!</summary>
-          <ul>
-            <li>It could be done with the addition of just one line with conditional logic</li>
-            <li>There is no room for two champions...⚔️ </li>
-          </ul>
-        </details>
-<details class="hintbox">
-          <summary>Just show me the answer… 🫠</summary>
-          <div class="code-block">
-            <pre><span class="keyword">if</span> <span class="variable">challenger_f1</span> <span class="operator">&gt;</span> <span class="variable">champion_f1</span><span class="operator">:</span>
-            <span class="comment"># This automatically removes the champion alias from the previous version</span>
-            <span class="variable">client</span><span class="operator">.</span><span class="function">set_registered_model_alias</span><span class="bracket">(</span>
-                <span class="variable">UC_MODEL_NAME</span><span class="operator">,</span> <span class="string">"champion"</span><span class="operator">,</span> <span class="variable">challenger_version</span>
-            <span class="bracket">)</span>
-            <span class="comment"># Mark the previous champion</span>
-            <span class="variable">client</span><span class="operator">.</span><span class="function">set_registered_model_alias</span><span class="bracket">(</span>
-                <span class="variable">UC_MODEL_NAME</span><span class="operator">,</span> <span class="string">"previous_champion"</span><span class="operator">,</span> <span class="variable">champion_version</span>
-            <span class="bracket">)</span>
-            <span class="function">print</span><span class="bracket">(</span><span class="string">f"Challenger wins! Model version {challenger_version} is now the new champion."</span><span class="bracket">)</span></pre>
-            <pre><span class="keyword">else</span><span class="operator">:</span>
-            <span class="function">print</span><span class="bracket">(</span><span class="string">f"Champion wins! Model version {champion_version} remains the champion."</span><span class="bracket">)</span></pre>
-          </div>
         </details>
         """,
 }

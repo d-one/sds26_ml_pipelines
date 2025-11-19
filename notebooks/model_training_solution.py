@@ -36,11 +36,10 @@ from xgboost.spark import SparkXGBClassifier
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Quest 1 · Identify categories of features
-# MAGIC **Goal:** detect numeric and categorical columns from the labeled dataset.
-# MAGIC - Inspect the results.
-# MAGIC - Are the contents of the variable lists accurate?
-# MAGIC - Would you change anything?
+# MAGIC ## Quest 1 · Prepare the Feature Store Training Set
+# MAGIC **Goal:** load the fact table and build a Feature Store training set that joins in features.
+# MAGIC
+# MAGIC You only need to replace the `...` placeholders.
 # MAGIC
 # MAGIC Need a nudge? Use the hint loader below.
 
@@ -51,57 +50,6 @@ load_hint("model_training", "quest_1")
 
 # COMMAND ----------
 
-# DBTITLE 1,Feature categories
-FACT_COLUMNS = ["Coffee_Drinker", "ID", "Timestamp"]
-# Keep label + identifiers out of the auto-generated feature lists
-coffee_labeled_df = spark.table(f"{CATALOG}.{SCHEMA_WITH_SOURCE_DATA}.coffee_labeled_features")
-data_schema_fields = coffee_labeled_df.schema.fields
-
-numeric_cols = [
-    field.name
-    for field in data_schema_fields
-    if field.dataType
-    in [T.IntegerType(), T.DoubleType(), T.LongType(), T.FloatType()]
-    and field.name not in FACT_COLUMNS
-]
-
-categorical_cols = [
-    field.name
-    for field in data_schema_fields
-    if field.dataType == T.StringType() and field.name not in FACT_COLUMNS
-]
-
-all_feature_cols = numeric_cols + categorical_cols
-
-print("Detected numeric columns:\n\t", numeric_cols)
-print("\nDetected categorical columns:\n\t", categorical_cols)
-coffee_labeled_df.limit(10).display()
-
-# COMMAND ----------
-
-# DBTITLE 1,Quest 1 solution
-numeric_cols.remove("Alcohol_Consumption")
-numeric_cols.remove("Smoking")
-
-categorical_cols += ["Alcohol_Consumption", "Smoking"]
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## Quest 2 · Prepare the Feature Store Training Set
-# MAGIC **Goal:** load the fact table and build a Feature Store training set that joins in features.
-# MAGIC
-# MAGIC You only need to replace the `...` placeholders.
-# MAGIC
-# MAGIC Need a nudge? Use the hint loader below.
-
-# COMMAND ----------
-
-# DBTITLE 1,Load hint for Quest 2
-load_hint("model_training", "quest_2")
-
-# COMMAND ----------
-
 # DBTITLE 1,Loading the training set
 fe = FeatureEngineeringClient()
 labeled_fact_df = spark.table(f"{CATALOG}.{SCHEMA_WITH_SOURCE_DATA}.coffee_labeled_fact")
@@ -109,7 +57,7 @@ labeled_fact_df = spark.table(f"{CATALOG}.{SCHEMA_WITH_SOURCE_DATA}.coffee_label
 # Compose a Feature Lookup that pulls engineered columns by key + timestamp
 feature_lookup = FeatureLookup(
     table_name=f"{CATALOG}.{SCHEMA_WITH_SOURCE_DATA}.coffee_labeled_features",
-    feature_names=all_feature_cols,  # QUEST 2 SOLUTION
+    feature_names=FEATURE_COLUMNS,  # QUEST 2 SOLUTION
     lookup_key="ID",
     timestamp_lookup_key="Timestamp",
 )
@@ -126,7 +74,7 @@ full_labeled_df = training_set.load_df()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Quest 3 · Configure Splits, Pipeline, and MLflow
+# MAGIC ## Quest 2 · Configure Splits, Pipeline, and MLflow
 # MAGIC **Goal:** create data splits, build preprocessing stages, and configure the MLflow experiment.
 # MAGIC
 # MAGIC What do you thing is a good split?
@@ -138,7 +86,7 @@ full_labeled_df = training_set.load_df()
 # COMMAND ----------
 
 # DBTITLE 1,Load hint for Quest 3
-load_hint("model_training", "quest_3")
+load_hint("model_training", "quest_2")
 
 # COMMAND ----------
 
@@ -154,14 +102,14 @@ for split_name, split_df in [
     print(f"{split_name.title()} split: {split_df.count():,} rows")
 
 # Assemble preprocessing steps once so every model trial reuses them
-STAGES = build_preprocessing_stages(categorical_cols, numeric_cols)
+STAGES = build_preprocessing_stages()
 
 exp_id = setup_experiment(f"/Workspace/Users/{USER_EMAIL}/coffee_hp_tuning_experiment")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Quest 4 · Execute the Optuna Study
+# MAGIC ## Quest 3 · Execute the Optuna Study
 # MAGIC **Goal:** run Optuna with a head start!
 # MAGIC
 # MAGIC What starting parameters should we use, if any at all? How would you decide?
@@ -170,8 +118,8 @@ exp_id = setup_experiment(f"/Workspace/Users/{USER_EMAIL}/coffee_hp_tuning_exper
 
 # COMMAND ----------
 
-# DBTITLE 1,Load hint for Quest 4
-load_hint("model_training", "quest_4")
+# DBTITLE 1,Load hint for Quest 3
+load_hint("model_training", "quest_3")
 
 # COMMAND ----------
 
@@ -271,7 +219,7 @@ best_pipeline = Pipeline(stages=[*STAGES, best_xgb])
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Quest 5 · Evaluate the Tuned Model
+# MAGIC ## Quest 4 · Evaluate the Tuned Model
 # MAGIC **Goal:** fit the best parameters on train+validation, score the test set, and report feature importances.
 # MAGIC
 # MAGIC You only need to replace the `...` placeholders.
@@ -280,8 +228,8 @@ best_pipeline = Pipeline(stages=[*STAGES, best_xgb])
 
 # COMMAND ----------
 
-# DBTITLE 1,Load hint for Quest 5
-load_hint("model_training", "quest_5")
+# DBTITLE 1,Load hint for Quest 4
+load_hint("model_training", "quest_4")
 
 # COMMAND ----------
 
@@ -307,15 +255,15 @@ display(confusion_matrix_pdf)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Quest 6 · Register the Final Model
+# MAGIC ## Quest 5 · Register the Final Model
 # MAGIC **Goal:** log artifacts to MLflow, and manage UC aliases.
 # MAGIC
 # MAGIC No need to do anything here, just study a bit the cell and run it.
 
 # COMMAND ----------
 
-# DBTITLE 1,Load hint for Quest 6
-load_hint("model_training", "quest_6")
+# DBTITLE 1,Load hint for Quest 5
+load_hint("model_training", "quest_5")
 
 # COMMAND ----------
 
@@ -362,107 +310,3 @@ print(f"Test recall0: {test_rec0:.4f}")
 print(f"Test F1 (class 0): {test_f10:.4f}")
 
 print("Final XGBoost model trained on full dataset and logged to MLflow.")
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## Quest 7 · A Duel?!
-# MAGIC
-# MAGIC Now you have a model registered with the `"champion"` alias.
-# MAGIC
-# MAGIC Suppose new data comes in, in the form of `test_df`. How would you handle the logging a new model, the `"challenger"`?
-# MAGIC
-# MAGIC You can **use the previous cell's logic**, but what would you change?
-# MAGIC
-# MAGIC You do not need to use mlflow to log metrics and set tags for this task (lines `28-44` in previous cell).
-# MAGIC
-# MAGIC Write the logic below the final `TODO:` comment of the cell.
-# MAGIC
-# MAGIC
-
-# COMMAND ----------
-
-# DBTITLE 1,Load hint for Quest 7
-load_hint("model_training", "quest_7")
-
-# COMMAND ----------
-
-# DBTITLE 1,Promote the challenger
-# New data comes in!
-new_data_for_training, new_data_for_testing = test_df.randomSplit(
-    [0.5, 0.5], seed=42
-)
-
-updated_df = train_val_df.unionByName(new_data_for_training)
-print(f"Updated data rows: {updated_df.count():,}")
-
-# Load Champion model by using its alias
-champion_model = mlflow.spark.load_model(f"models:/{f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model"}@champion")
-
-# Evaluate the Champion model on the new data
-champion_predictions_df = best_model.transform(new_data_for_testing)
-champion_precision, champion_recall, champion_f1 = class_zero_metrics(
-    df=champion_predictions_df, label_col="Coffee_Drinker", pred_col="prediction"
-)
-# Store current Champion info
-champ_info = client.get_model_version_by_alias(f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model", "champion")
-champion_version = champ_info.version
-
-# Train the Challenger model on the updated data
-challenger_model = best_pipeline.fit(updated_df)
-challenger_predictions_df = challenger_model.transform(new_data_for_testing)
-
-# Evaluate the Challenger model on the new data
-challenger_precision, challenger_recall, challenger_f1 = class_zero_metrics(
-    df=challenger_predictions_df, label_col="Coffee_Drinker", pred_col="prediction"
-)
-
-# Log Challenger model
-with mlflow.start_run(run_name="coffee_xgb_best") as run:
-
-    # Capture a signature snapshot for the challenger as well
-    sample_inf_df = updated_df.drop("Coffee_Drinker").limit(1)
-    sample_pred_df = challenger_model.transform(sample_inf_df).select(
-        sample_inf_df.columns + ["prediction"]
-    )
-
-    signature = mlflow.models.infer_signature(sample_inf_df, sample_pred_df)
-
-    mlflow_model_info = mlflow.spark.log_model(
-        spark_model=challenger_model,
-        artifact_path="spark-model-full-data",
-        registered_model_name=f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model",
-        pip_requirements=PIP_REQUIREMENTS,
-        signature=signature,
-    )
-
-    versions = client.search_model_versions(f"name = '{f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model"}'")
-    challenger_version = versions[0].version
-    client.set_registered_model_alias(
-        f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model", "challenger", challenger_version
-    )
-
-    ### QUEST 7 SOLUTION START ###
-    if challenger_f1 > champion_f1:
-        # This automatically removes the champion alias from the previous version
-        client.set_registered_model_alias(
-            f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model", "champion", challenger_version
-        )
-        # Mark the previous champion
-        client.set_registered_model_alias(
-            f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model", "previous_champion", champion_version
-        )
-        print(
-            f"Challenger wins! Model version {challenger_version} is now the new champion."
-        )
-    else:
-        print(
-            f"Champion wins! Model version {champion_version} remains the champion."
-        )
-    ### QUEST 7 SOLUTION END ###
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## Bonus question!
-# MAGIC Would you do anything different about the training of our final model?...
