@@ -112,264 +112,251 @@ def setup_experiment(experiment_name):
 # COMMAND ----------
 
 # DBTITLE 1,Functions: clean up functions
-def _drop_table_if_exists(table_path: str, label: str) -> None:
-    if not table_path:
-        return
+# Databricks Schema Complete Cleanup Function
+# Cleans up all tables, views, functions, and registered models in a schema
+
+from mlflow import MlflowClient
+
+def cleanup_databricks_schema(catalog, schema, dry_run=False):
+    """
+    Clean up all objects in a Databricks Unity Catalog schema.
+    
+    Parameters:
+    -----------
+    catalog : str
+        The catalog name (e.g., 'gtc25_ml_catalog')
+    schema : str
+        The schema name (e.g., 'michalis_kalligas')
+    dry_run : bool, optional
+        If True, only shows what would be deleted without actually deleting (default: False)
+    
+    Returns:
+    --------
+    dict
+        Summary of deleted objects
+    """
+    full_schema = f"{catalog}.{schema}"
+    summary = {
+        'tables': 0,
+        'views': 0,
+        'functions': 0,
+        'models': 0,
+        'model_versions': 0,
+        'errors': []
+    }
+    
+    print("=" * 70)
+    print(f"{'DRY RUN - ' if dry_run else ''}Cleanup of {full_schema}")
+    print("=" * 70)
+    
+    # Set the current catalog to avoid context issues
     try:
-        spark.sql(f"DROP TABLE IF EXISTS {table_path}")
-        print(f"Dropped {label}: {table_path}")
-    except Exception as exc:
-        print(f"Unable to drop {label} ({table_path}): {exc}")
-
-
-def _delete_workspace_dir(path: str) -> None:
-    if not path:
-        return
-    workspace_utils = globals().get("dbutils", None)
-    if workspace_utils is None:
-        print(f"dbutils is unavailable; cannot remove workspace path {path}.")
-        return
-
-    normalized = path.rstrip("/")
-    candidates = {normalized}
-    if normalized.startswith("/Workspace/"):
-        candidates.add("/" + normalized.split("/Workspace/", 1)[1])
-
-    for candidate in candidates:
-        try:
-            workspace_utils.workspace.delete(candidate, True)
-            print(f"Deleted workspace directory: {candidate}")
-        except Exception as exc:
-            if "RESOURCE_DOES_NOT_EXIST" in str(exc):
-                print(f"Workspace directory already missing: {candidate}")
+        spark.sql(f"USE CATALOG {catalog}")
+        print(f"Set current catalog to: {catalog}")
+    except Exception as e:
+        print(f"Warning: Could not set catalog: {e}")
+    
+    # ==================================================================
+    # PART 1: Clean up Tables and Views
+    # ==================================================================
+    print(f"\n{'[DRY RUN] ' if dry_run else ''}Cleaning up tables and views...")
+    
+    try:
+        tables_df = spark.sql(f"SHOW TABLES IN {full_schema}")
+        tables_list = tables_df.collect()
+        
+        print(f"Found {len(tables_list)} table/view objects")
+        
+        for row in tables_list:
+            table_name = row.tableName
+            is_temp = row.isTemporary
+            
+            if not is_temp:
+                full_name = f"{full_schema}.{table_name}"
+                
+                if dry_run:
+                    print(f"  [DRY RUN] Would drop: {full_name}")
+                    summary['tables'] += 1
+                else:
+                    try:
+                        # Try dropping as table first
+                        spark.sql(f"DROP TABLE IF EXISTS {full_name}")
+                        print(f"  ✓ Dropped table: {full_name}")
+                        summary['tables'] += 1
+                    except:
+                        try:
+                            # If that fails, try as view
+                            spark.sql(f"DROP VIEW IF EXISTS {full_name}")
+                            print(f"  ✓ Dropped view: {full_name}")
+                            summary['views'] += 1
+                        except Exception as e:
+                            error_msg = f"Failed to drop {full_name}: {str(e)[:100]}"
+                            print(f"  ✗ {error_msg}")
+                            summary['errors'].append(error_msg)
+    except Exception as e:
+        error_msg = f"Error listing tables: {str(e)[:100]}"
+        print(f"✗ {error_msg}")
+        summary['errors'].append(error_msg)
+    
+    # ==================================================================
+    # PART 2: Clean up Functions
+    # ==================================================================
+    print(f"\n{'[DRY RUN] ' if dry_run else ''}Cleaning up functions...")
+    
+    try:
+        # Make sure we're using the right catalog and schema
+        spark.sql(f"USE CATALOG {catalog}")
+        spark.sql(f"USE SCHEMA {schema}")
+        
+        functions_df = spark.sql(f"SHOW FUNCTIONS IN {full_schema}")
+        functions_list = functions_df.collect()
+        
+        schema_functions = [row.function for row in functions_list if full_schema in row.function]
+        print(f"Found {len(schema_functions)} functions")
+        
+        for func_name in schema_functions:
+            if dry_run:
+                print(f"  [DRY RUN] Would drop function: {func_name}")
+                summary['functions'] += 1
             else:
-                print(
-                    f"Unable to delete workspace directory {candidate}: {exc}"
-                )
-
-
-def _delete_named_mlflow_experiment(experiment_name: str) -> None:
-    if not experiment_name:
-        return
+                try:
+                    spark.sql(f"DROP FUNCTION IF EXISTS {func_name}")
+                    print(f"  ✓ Dropped function: {func_name}")
+                    summary['functions'] += 1
+                except Exception as e:
+                    error_msg = f"Failed to drop function {func_name}: {str(e)[:100]}"
+                    print(f"  ✗ {error_msg}")
+                    summary['errors'].append(error_msg)
+    except Exception as e:
+        print(f"No functions found or error: {str(e)[:200]}")
+    
+    # ==================================================================
+    # PART 3: Clean up Registered Models
+    # ==================================================================
+    print(f"\n{'[DRY RUN] ' if dry_run else ''}Cleaning up registered models...")
+    
     try:
-        import mlflow
-        from mlflow import MlflowClient
-    except Exception as exc:
-        print(f"Unable to load MLflow for experiment cleanup: {exc}")
-        return
-
-    experiment = mlflow.get_experiment_by_name(experiment_name)
-    if not experiment:
-        print(f"MLflow experiment not found: {experiment_name}")
-        return
-
-    try:
-        MlflowClient().delete_experiment(experiment.experiment_id)
-        print(f"Deleted MLflow experiment: {experiment_name}")
-    except Exception as exc:
-        print(f"Unable to delete MLflow experiment {experiment_name}: {exc}")
-
-
-def _delete_mlflow_experiments_matching(substring: str) -> None:
-    if not substring:
-        return
-    try:
-        from mlflow import MlflowClient
-        from mlflow.entities import ViewType
-    except Exception as exc:
-        print(f"Unable to scan MLflow experiments: {exc}")
-        return
-
-    client = MlflowClient()
-    try:
-        experiments = client.search_experiments(view_type=ViewType.ALL)
-    except Exception as exc:
-        print(f"Unable to list MLflow experiments: {exc}")
-        return
-
-    matches = [
-        exp for exp in experiments if exp.name and substring in exp.name
-    ]
-    if not matches:
-        print(f"No MLflow experiments matched substring: {substring}")
-        return
-
-    for exp in matches:
-        try:
-            client.delete_experiment(exp.experiment_id)
-            print(f"Deleted MLflow experiment: {exp.name}")
-        except Exception as exc:
-            print(f"Unable to delete MLflow experiment {exp.name}: {exc}")
-
-
-def _delete_registered_model(model_name: str) -> None:
-    if not model_name:
-        return
-    try:
-        import mlflow
-        from mlflow import MlflowClient
-    except Exception as exc:
-        print(f"Unable to load MLflow for model cleanup: {exc}")
-        return
-
-    try:
-        mlflow.set_registry_uri("databricks-uc")
-        MlflowClient().delete_registered_model(name=model_name)
-        print(f"Deleted Unity Catalog model: {model_name}")
-    except Exception as exc:
-        if "RESOURCE_DOES_NOT_EXIST" in str(exc):
-            print(f"Unity Catalog model already missing: {model_name}")
+        client = MlflowClient()
+        
+        # Get all registered models and filter by our schema
+        print("  Searching for models...")
+        all_models = client.search_registered_models(max_results=10000)
+        
+        # Filter to only models in our specific schema
+        schema_prefix = f"{full_schema}."
+        schema_models = []
+        
+        for model in all_models:
+            if model.name.startswith(schema_prefix):
+                schema_models.append(model)
+                print(f"  Found: {model.name}")
+        
+        print(f"\nTotal models found in {full_schema}: {len(schema_models)}")
+        
+        if len(schema_models) == 0:
+            print("  No models to delete")
         else:
-            print(f"Unable to delete model {model_name}: {exc}")
+            # List all models that will be affected
+            print(f"\n  Models to be {'deleted' if not dry_run else 'affected'}:")
+            for model in schema_models:
+                print(f"    - {model.name}")
+            
+            if dry_run:
+                print(f"\n  [DRY RUN] Would process {len(schema_models)} models")
+            
+            # Process each model
+            for model in schema_models:
+                model_name = model.name
+                
+                # CRITICAL SAFETY CHECK
+                if not model_name.startswith(schema_prefix):
+                    error_msg = f"SAFETY CHECK FAILED: {model_name} doesn't start with {schema_prefix}"
+                    print(f"  ✗ {error_msg}")
+                    summary['errors'].append(error_msg)
+                    continue
+                
+                try:
+                    # Get all versions
+                    versions = client.search_model_versions(f"name='{model_name}'")
+                    print(f"\n  Model: {model_name} ({len(versions)} versions)")
+                    
+                    if dry_run:
+                        print(f"    [DRY RUN] Would delete {len(versions)} versions and the model")
+                        summary['models'] += 1
+                        summary['model_versions'] += len(versions)
+                    else:
+                        # Delete all versions first
+                        for version in versions:
+                            try:
+                                client.delete_model_version(
+                                    name=model_name,
+                                    version=version.version
+                                )
+                                print(f"    ✓ Deleted version {version.version}")
+                                summary['model_versions'] += 1
+                            except Exception as e:
+                                error_msg = f"Failed to delete version {version.version}: {str(e)[:100]}"
+                                print(f"    ✗ {error_msg}")
+                                summary['errors'].append(error_msg)
+                        
+                        # Delete the registered model
+                        client.delete_registered_model(model_name)
+                        print(f"  ✓ Deleted registered model: {model_name}")
+                        summary['models'] += 1
+                        
+                except Exception as e:
+                    error_msg = f"Failed to process model {model_name}: {str(e)[:100]}"
+                    print(f"  ✗ {error_msg}")
+                    summary['errors'].append(error_msg)
+                
+    except Exception as e:
+        error_msg = f"Error cleaning up models: {str(e)[:200]}"
+        print(f"✗ {error_msg}")
+        summary['errors'].append(error_msg)
+    
+    # ==================================================================
+    # Summary
+    # ==================================================================
+    print("\n" + "=" * 70)
+    print(f"{'DRY RUN ' if dry_run else ''}CLEANUP SUMMARY")
+    print("=" * 70)
+    print(f"Tables dropped:           {summary['tables']}")
+    print(f"Views dropped:            {summary['views']}")
+    print(f"Functions dropped:        {summary['functions']}")
+    print(f"Models deleted:           {summary['models']}")
+    print(f"Model versions deleted:   {summary['model_versions']}")
+    print(f"Errors encountered:       {len(summary['errors'])}")
+    
+    if summary['errors']:
+        print("\nErrors:")
+        for error in summary['errors'][:10]:  # Show first 10 errors
+            print(f"  - {error}")
+        if len(summary['errors']) > 10:
+            print(f"  ... and {len(summary['errors']) - 10} more errors")
+    
+    if dry_run:
+        print("\n⚠️  This was a DRY RUN - no objects were actually deleted")
+        print("   Run with dry_run=False to perform actual deletion")
+    else:
+        print(f"\n✓ Cleanup of {full_schema} completed!")
+    
+    print("=" * 70)
+    
+    return summary
 
 
-def _get_feature_engineering_client():
-    try:
-        from databricks.feature_engineering import FeatureEngineeringClient
-    except Exception as exc:
-        print(f"FeatureEngineeringClient unavailable: {exc}")
-        return None
-    try:
-        return FeatureEngineeringClient()
-    except Exception as exc:
-        print(f"Unable to create FeatureEngineeringClient: {exc}")
-        return None
+# ==================================================================
+# USAGE EXAMPLES
+# ==================================================================
 
+# Example 1: Dry run to see what would be deleted (RECOMMENDED FIRST)
+# summary = cleanup_databricks_schema("gtc25_ml_catalog", "michalis_kalligas", dry_run=True)
 
-def _delete_online_store(store_name: str) -> None:
-    if not store_name:
-        return
-    fe_client = _get_feature_engineering_client()
-    if not fe_client:
-        return
+# Example 2: Actual cleanup
+# summary = cleanup_databricks_schema("gtc25_ml_catalog", "michalis_kalligas")
 
-    delete_fn = getattr(fe_client, "delete_online_store", None)
-    if not callable(delete_fn):
-        print("FeatureEngineeringClient has no delete_online_store method.")
-        return
-
-    try:
-        delete_fn(name=store_name)
-        print(f"Deleted online feature store: {store_name}")
-    except Exception as exc:
-        if "RESOURCE_DOES_NOT_EXIST" in str(exc):
-            print(f"Online store already missing: {store_name}")
-        else:
-            print(f"Unable to delete online store {store_name}: {exc}")
-
-
-def _drop_feature_table(table_name: str) -> None:
-    if not table_name:
-        return
-    fe_client = _get_feature_engineering_client()
-    table_fn = None
-    if fe_client:
-        table_fn = getattr(fe_client, "drop_table", None) or getattr(
-            fe_client, "delete_table", None
-        )
-    if callable(table_fn):
-        try:
-            table_fn(name=table_name)
-            print(f"Dropped feature store table: {table_name}")
-            return
-        except Exception as exc:
-            print(
-                f"Unable to drop feature table via client {table_name}: {exc}"
-            )
-    _drop_table_if_exists(table_name, "feature table")
-
-
-def cleanup1() -> None:
-    """Undo tables created in 01_data_ingest."""
-    _drop_table_if_exists(
-        f"{CATALOG}.{MY_SCHEMA}.coffee_labeled", "labeled training table"
-    )
-    _drop_table_if_exists(
-        f"{CATALOG}.{MY_SCHEMA}.coffee_prod_holdout",
-        "production holdout table",
-    )
-
-
-def cleanup2() -> None:
-    """Module 02 is read-only; nothing to undo."""
-    print("Module 02 does not create persistent assets—nothing to clean.")
-
-
-def cleanup3() -> None:
-    """Remove feature store artifacts from 03_feature_store."""
-    _drop_table_if_exists(
-        f"{CATALOG}.{MY_SCHEMA}.coffee_labeled_fact", "fact table"
-    )
-    _drop_feature_table(f"{CATALOG}.{MY_SCHEMA}.coffee_features")
-    _drop_table_if_exists(
-        f"{CATALOG}.{MY_SCHEMA}.online_store_coffee", "online feature table"
-    )
-    _delete_online_store(f"{MY_NAME.replace('_', '-')}-online-store")
-
-
-def cleanup4() -> None:
-    """Remove AutoML experiments and notebooks."""
-    _delete_mlflow_experiments_matching("coffee_automl_")
-    _delete_mlflow_experiments_matching("automl_experiments")
-    _delete_workspace_dir(f"/Workspace/Users/{USER_EMAIL}/automl_experiments")
-
-
-def cleanup5() -> None:
-    """Remove Optuna experiment artifacts and registered model."""
-    _delete_named_mlflow_experiment(
-        f"/Workspace/Users/{USER_EMAIL}/coffee_hp_tuning_experiment"
-    )
-    _delete_registered_model(f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model")
-
-
-def cleanup6() -> None:
-    """Remove prediction simulation outputs."""
-    _drop_table_if_exists(
-        f"{CATALOG}.{MY_SCHEMA}.coffee_prod_predictions",
-        "production predictions table",
-    )
-    _delete_named_mlflow_experiment(
-        f"/Workspace/Users/{USER_EMAIL}/coffee_prod_predictions"
-    )
-
-
-def cleanup7() -> None:
-    """Delete the Databricks Model Serving endpoint."""
-    model_name = "coffee_xgb_model"
-    endpoint_name = f"{MY_NAME}_{model_name}_endpoint"
-    try:
-        import mlflow.deployments
-    except Exception as exc:
-        print(f"Unable to load MLflow deployments client: {exc}")
-        return
-
-    try:
-        client = mlflow.deployments.get_deploy_client("databricks")
-        client.delete_endpoint(endpoint_name)
-        print(f"Deleted serving endpoint: {endpoint_name}")
-    except Exception as exc:
-        if "RESOURCE_DOES_NOT_EXIST" in str(exc) or "not found" in str(exc):
-            print(f"Serving endpoint already missing: {endpoint_name}")
-        else:
-            print(f"Unable to delete serving endpoint {endpoint_name}: {exc}")
-
-
-def clean_all() -> None:
-    """Run every cleanup helper in dependency order."""
-    for fn in (
-        cleanup7,
-        cleanup6,
-        cleanup5,
-        cleanup4,
-        cleanup3,
-        cleanup2,
-        cleanup1,
-    ):
-        try:
-            fn()
-        except Exception as exc:
-            print(f"Cleanup '{fn.__name__}' failed: {exc}")
-
+# Example 3: Cleanup another schema
+# summary = cleanup_databricks_schema("my_catalog", "my_schema", dry_run=True)
 
 # COMMAND ----------
 
