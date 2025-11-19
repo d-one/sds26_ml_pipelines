@@ -201,7 +201,7 @@ with mlflow.start_run(run_name="coffee_model_duel"):
         "subsample": 0.65,
     }
 
-    STAGES = build_preprocessing_stages(CATEGORICAL_COLUMNS, NUMERICAL_COLUMNS)
+    STAGES = build_preprocessing_stages()
     pipeline = Pipeline(stages=[*STAGES, SparkXGBClassifier(**challenger_xgb_params)])
     challenger_model = pipeline.fit(train_df)
 
