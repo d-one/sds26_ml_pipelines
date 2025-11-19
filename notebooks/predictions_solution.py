@@ -200,11 +200,11 @@ with mlflow.start_run(run_name="coffee_model_duel"):
         "seed": 42,
         "tree_method": "hist",
         "eval_metric": "logloss",
-        "eta": 0.05,
-        "colsample_bytree": 0.6,
-        "max_depth": 9,
-        "min_child_weight": 5.0,
-        "subsample": 0.65,
+        "eta": 0.10129977249722856,
+        "colsample_bytree": 0.860735030238694,
+        "max_depth": 5,
+        "min_child_weight": 7.191514678120411,
+        "subsample": 0.8224911199963841,
     }
 
     STAGES = build_preprocessing_stages()
@@ -248,3 +248,6 @@ with mlflow.start_run(run_name="coffee_model_duel"):
         # And we have a new champion
         client.set_registered_model_alias(MODEL_PATH, "champion", challenger_version)
 
+
+print(f"challenger_test_f1:\t{challenger_test_f1}")
+print(f"champion_test_f1:\t{champion_test_f1}")
