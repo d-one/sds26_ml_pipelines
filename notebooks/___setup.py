@@ -14,10 +14,8 @@ SCHEMA_WITH_SOURCE_DATA = "source_data"
 cwd = os.getcwd()
 parts = cwd.split("/Users/")
 USER_EMAIL = parts[1].split("/")[0] if len(parts) > 1 else None
-MY_NAME = USER_EMAIL.split("@")[0]
-MY_NAME = re.sub(r"[^a-zA-Z0-9_]", "_", MY_NAME)
-
-MY_SCHEMA = MY_NAME
+MY_SCHEMA = USER_EMAIL.split("@")[0]
+MY_SCHEMA = re.sub(r"[^a-zA-Z0-9_]", "_", MY_SCHEMA)
 
 PIP_REQUIREMENTS = [
     "mlflow==3.6.0",
@@ -33,7 +31,6 @@ print(f"- USER_EMAIL:".ljust(30) + f"{USER_EMAIL}")
 print(f"- CATALOG:".ljust(30) + f"{CATALOG}")
 print(f"- SCHEMA_WITH_SOURCE_DATA:".ljust(30) + f"{SCHEMA_WITH_SOURCE_DATA}")
 print(f"- MY_SCHEMA:".ljust(30) + f"{MY_SCHEMA}")
-print(f"- PIP_REQUIREMENTS")
 
 # COMMAND ----------
 
@@ -468,10 +465,6 @@ HINTS = {
           <details class="hintbox">
             <summary>Show me the hint!</summary>
 
-            <p class="answer"><strong>Hint for Question 1</strong></p>
-            <p>When you run the cell below there is an output...check it out!</p>
-
-            <p class="answer"><strong>Hint for Question 2</strong></p>
             <p>Open the Experiment created by mlflow and take a look around!</p>
 
           </details>
@@ -479,13 +472,11 @@ HINTS = {
           <details class="hintbox">
             <summary>Just show me the answer… 🫠</summary>
 
-            <p class="answer"><strong>Answer to Question 1</strong></p>
             <p>When you run the following code, MLflow creates the output:</p>
             <p><code>Logged 1 run to an experiment in MLflow.</code></p>
             <p>You can see it in the <a href="https://adb-1451829595406012.12.azuredatabricks.net/ml/experiments">Experiments</a> page.</p>
             <p>The "run" and "experiment" are links to the corresponding resources. Clicking on them will take you to the Experiments page where you can see the results.</p>
 
-            <p class="answer"><strong>Answer to Question 2</strong></p>
             <p>The metrics that were logged for evaluating the model are:</p>
             <ul>
               <li>true_negatives</li>

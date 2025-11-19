@@ -70,6 +70,11 @@ model = mlflow.spark.load_model(CHAMPION_MODEL_URI)
 predictions_df = model.transform(holdout_df)
 display(predictions_df.limit(10))
 
+# Save predictions in a table
+PREDICTIONS_TABLE_PATH = f"{CATALOG}.{MY_SCHEMA}.coffee_predictions"
+predictions_df.write.format("delta").mode("overwrite").saveAsTable(PREDICTIONS_TABLE_PATH)
+print(f"DataFrame predictions_df has been written to table:\n\t- {PREDICTIONS_TABLE_PATH}")
+
 # COMMAND ----------
 
 # MAGIC %md
@@ -106,17 +111,16 @@ load_hint("predictions", "quest_3")
 
 # COMMAND ----------
 
-# DBTITLE 1,mlflow evaluation
+# DBTITLE 1,mlflow evaluate
 client = MlflowClient()
 
 version = client.get_model_version_by_alias(name=MODEL_PATH, alias="champion")
 
 run_name = f"coffee_xgb_model_v{version.version}_evaluation"
 
-# Log the baseline model to MLflow
-with mlflow.start_run(run_name=run_name) as run:
+with mlflow.start_run(run_name=run_name):
 
-    # Evaluate the logged model
+    # Evaluate the model
     results = mlflow.models.evaluate(
         CHAMPION_MODEL_URI,
         holdout_df,
@@ -126,16 +130,3 @@ with mlflow.start_run(run_name=run_name) as run:
         evaluator_config={"default": {"pos_label": 0}}
     )
 
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## Save predictions
-
-# COMMAND ----------
-
-# DBTITLE 1,Save predictions table
-PREDICTIONS_TABLE_PATH = f"{CATALOG}.{MY_SCHEMA}.coffee_predictions"
-predictions_df.write.format("delta").mode("overwrite").saveAsTable(PREDICTIONS_TABLE_PATH)
-
-print(f"DataFrame predictions_df has been written to table:\n\t- {PREDICTIONS_TABLE_PATH}")
