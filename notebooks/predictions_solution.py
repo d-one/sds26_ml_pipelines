@@ -226,11 +226,11 @@ with mlflow.start_run(run_name="coffee_model_duel"):
         signature=signature,
     )
 
+
     # Set latest model's alias to "challenger"
     versions = client.search_model_versions(f"name = '{MODEL_PATH}'")
-    challenger_version = versions[-1].version  # Latest version is the challenger
+    challenger_version = max(int(v.version) for v in versions)  # Latest version is the challenger
     client.set_registered_model_alias(MODEL_PATH, "challenger", challenger_version)
-
 
     # Load & evaluate the Champion model
     champion_model = mlflow.spark.load_model(f"models:/{MODEL_PATH}@champion")
@@ -240,6 +240,7 @@ with mlflow.start_run(run_name="coffee_model_duel"):
 
     champion_version_info = client.get_model_version_by_alias(MODEL_PATH, "champion")
     champion_version = champion_version_info.version
+
 
     # Duel of champions
     if challenger_test_f1 > champion_test_f1:

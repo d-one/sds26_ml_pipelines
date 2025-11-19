@@ -280,7 +280,7 @@ with mlflow.start_run(run_name="coffee_xgb_best") as run:
 
     signature = mlflow.models.infer_signature(sample_inf_df, sample_pred_df)
 
-    mlflow_model_info = mlflow.spark.log_model(
+    mlflow.spark.log_model(
         spark_model=best_model,
         artifact_path="spark-model-full-data",
         registered_model_name=f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model",
