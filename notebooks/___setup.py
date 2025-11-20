@@ -53,12 +53,13 @@ CATEGORICAL_COLUMNS = [
     "Occupation",
     "Breakfast_Type",
     "Alcohol_Consumption",
-    "Smoking"
+    "Smoking",
 ]
 
 FEATURE_COLUMNS = NUMERICAL_COLUMNS + CATEGORICAL_COLUMNS
 
 # COMMAND ----------
+
 
 # DBTITLE 1,Function: class_zero_metrics
 def class_zero_metrics(
@@ -80,7 +81,8 @@ def class_zero_metrics(
 # COMMAND ----------
 
 # DBTITLE 1,Function: build_preprocessing_stages
-from pyspark.ml.feature import StringIndexer, OneHotEncoder, VectorAssembler
+from pyspark.ml.feature import OneHotEncoder, StringIndexer, VectorAssembler
+
 
 def build_preprocessing_stages():
     indexers = [
@@ -94,22 +96,32 @@ def build_preprocessing_stages():
         dropLast=True,
     )
 
-    assembler_input_cols = NUMERICAL_COLUMNS + [f"{c}_ohe" for c in CATEGORICAL_COLUMNS]
+    assembler_input_cols = NUMERICAL_COLUMNS + [
+        f"{c}_ohe" for c in CATEGORICAL_COLUMNS
+    ]
     assembler = VectorAssembler(
-        inputCols=assembler_input_cols, outputCol="features", handleInvalid="keep"
+        inputCols=assembler_input_cols,
+        outputCol="features",
+        handleInvalid="keep",
     )
     stages = indexers + [encoder, assembler]
-    print("\n1. String Indexers, these convert text categories into numeric indices")
+    print(
+        "\n1. String Indexers, these convert text categories into numeric indices"
+    )
     for c in CATEGORICAL_COLUMNS:
         print(f"   StringIndexer: {c} -> {c}_idx")
     print()
 
-    print("2. One Hot Encoders, these turn each index into a vector of binary flags")
+    print(
+        "2. One Hot Encoders, these turn each index into a vector of binary flags"
+    )
     for c in CATEGORICAL_COLUMNS:
         print(f"   OneHotEncoder: {c}_idx -> {c}_ohe")
     print()
 
-    print("3. Vector Assembler, this gathers all numeric and encoded features into a single feature vector")
+    print(
+        "3. Vector Assembler, this gathers all numeric and encoded features into a single feature vector"
+    )
     all_inputs = NUMERICAL_COLUMNS + [c + "_ohe" for c in CATEGORICAL_COLUMNS]
     print(f"   VectorAssembler: {all_inputs} -> features\n")
     return stages
@@ -119,6 +131,7 @@ def build_preprocessing_stages():
 
 # DBTITLE 1,Function: setup_experiment
 import mlflow
+
 
 def setup_experiment(experiment_name):
     mlflow.autolog(disable=True)
@@ -132,6 +145,7 @@ def setup_experiment(experiment_name):
     mlflow.set_experiment(experiment_name)
     return exp_id
 
+
 # COMMAND ----------
 
 # DBTITLE 1,Functions: clean up functions
@@ -140,10 +154,11 @@ def setup_experiment(experiment_name):
 
 from mlflow import MlflowClient
 
+
 def cleanup_databricks_schema(catalog, schema, dry_run=False):
     """
     Clean up all objects in a Databricks Unity Catalog schema.
-    
+
     Parameters:
     -----------
     catalog : str
@@ -152,7 +167,7 @@ def cleanup_databricks_schema(catalog, schema, dry_run=False):
         The schema name (e.g., 'michalis_kalligas')
     dry_run : bool, optional
         If True, only shows what would be deleted without actually deleting (default: False)
-    
+
     Returns:
     --------
     dict
@@ -160,183 +175,208 @@ def cleanup_databricks_schema(catalog, schema, dry_run=False):
     """
     full_schema = f"{catalog}.{schema}"
     summary = {
-        'tables': 0,
-        'views': 0,
-        'functions': 0,
-        'models': 0,
-        'model_versions': 0,
-        'errors': []
+        "tables": 0,
+        "views": 0,
+        "functions": 0,
+        "models": 0,
+        "model_versions": 0,
+        "errors": [],
     }
-    
+
     print("=" * 70)
     print(f"{'DRY RUN - ' if dry_run else ''}Cleanup of {full_schema}")
     print("=" * 70)
-    
+
     # Set the current catalog to avoid context issues
     try:
         spark.sql(f"USE CATALOG {catalog}")
         print(f"Set current catalog to: {catalog}")
     except Exception as e:
         print(f"Warning: Could not set catalog: {e}")
-    
+
     # ==================================================================
     # PART 1: Clean up Tables and Views
     # ==================================================================
-    print(f"\n{'[DRY RUN] ' if dry_run else ''}Cleaning up tables and views...")
-    
+    print(
+        f"\n{'[DRY RUN] ' if dry_run else ''}Cleaning up tables and views..."
+    )
+
     try:
         tables_df = spark.sql(f"SHOW TABLES IN {full_schema}")
         tables_list = tables_df.collect()
-        
+
         print(f"Found {len(tables_list)} table/view objects")
-        
+
         for row in tables_list:
             table_name = row.tableName
             is_temp = row.isTemporary
-            
+
             if not is_temp:
                 full_name = f"{full_schema}.{table_name}"
-                
+
                 if dry_run:
                     print(f"  [DRY RUN] Would drop: {full_name}")
-                    summary['tables'] += 1
+                    summary["tables"] += 1
                 else:
                     try:
                         # Try dropping as table first
                         spark.sql(f"DROP TABLE IF EXISTS {full_name}")
                         print(f"  ✓ Dropped table: {full_name}")
-                        summary['tables'] += 1
+                        summary["tables"] += 1
                     except:
                         try:
                             # If that fails, try as view
                             spark.sql(f"DROP VIEW IF EXISTS {full_name}")
                             print(f"  ✓ Dropped view: {full_name}")
-                            summary['views'] += 1
+                            summary["views"] += 1
                         except Exception as e:
-                            error_msg = f"Failed to drop {full_name}: {str(e)[:100]}"
+                            error_msg = (
+                                f"Failed to drop {full_name}: {str(e)[:100]}"
+                            )
                             print(f"  ✗ {error_msg}")
-                            summary['errors'].append(error_msg)
+                            summary["errors"].append(error_msg)
     except Exception as e:
         error_msg = f"Error listing tables: {str(e)[:100]}"
         print(f"✗ {error_msg}")
-        summary['errors'].append(error_msg)
-    
+        summary["errors"].append(error_msg)
+
     # ==================================================================
     # PART 2: Clean up Functions
     # ==================================================================
     print(f"\n{'[DRY RUN] ' if dry_run else ''}Cleaning up functions...")
-    
+
     try:
         # Make sure we're using the right catalog and schema
         spark.sql(f"USE CATALOG {catalog}")
         spark.sql(f"USE SCHEMA {schema}")
-        
+
         functions_df = spark.sql(f"SHOW FUNCTIONS IN {full_schema}")
         functions_list = functions_df.collect()
-        
-        schema_functions = [row.function for row in functions_list if full_schema in row.function]
+
+        schema_functions = [
+            row.function
+            for row in functions_list
+            if full_schema in row.function
+        ]
         print(f"Found {len(schema_functions)} functions")
-        
+
         for func_name in schema_functions:
             if dry_run:
                 print(f"  [DRY RUN] Would drop function: {func_name}")
-                summary['functions'] += 1
+                summary["functions"] += 1
             else:
                 try:
                     spark.sql(f"DROP FUNCTION IF EXISTS {func_name}")
                     print(f"  ✓ Dropped function: {func_name}")
-                    summary['functions'] += 1
+                    summary["functions"] += 1
                 except Exception as e:
-                    error_msg = f"Failed to drop function {func_name}: {str(e)[:100]}"
+                    error_msg = (
+                        f"Failed to drop function {func_name}: {str(e)[:100]}"
+                    )
                     print(f"  ✗ {error_msg}")
-                    summary['errors'].append(error_msg)
+                    summary["errors"].append(error_msg)
     except Exception as e:
         print(f"No functions found or error: {str(e)[:200]}")
-    
+
     # ==================================================================
     # PART 3: Clean up Registered Models
     # ==================================================================
-    print(f"\n{'[DRY RUN] ' if dry_run else ''}Cleaning up registered models...")
-    
+    print(
+        f"\n{'[DRY RUN] ' if dry_run else ''}Cleaning up registered models..."
+    )
+
     try:
         client = MlflowClient()
-        
+
         # Get all registered models and filter by our schema
         print("  Searching for models...")
         all_models = client.search_registered_models(max_results=10000)
-        
+
         # Filter to only models in our specific schema
         schema_prefix = f"{full_schema}."
         schema_models = []
-        
+
         for model in all_models:
             if model.name.startswith(schema_prefix):
                 schema_models.append(model)
                 print(f"  Found: {model.name}")
-        
+
         print(f"\nTotal models found in {full_schema}: {len(schema_models)}")
-        
+
         if len(schema_models) == 0:
             print("  No models to delete")
         else:
             # List all models that will be affected
-            print(f"\n  Models to be {'deleted' if not dry_run else 'affected'}:")
+            print(
+                f"\n  Models to be {'deleted' if not dry_run else 'affected'}:"
+            )
             for model in schema_models:
                 print(f"    - {model.name}")
-            
+
             if dry_run:
-                print(f"\n  [DRY RUN] Would process {len(schema_models)} models")
-            
+                print(
+                    f"\n  [DRY RUN] Would process {len(schema_models)} models"
+                )
+
             # Process each model
             for model in schema_models:
                 model_name = model.name
-                
+
                 # CRITICAL SAFETY CHECK
                 if not model_name.startswith(schema_prefix):
                     error_msg = f"SAFETY CHECK FAILED: {model_name} doesn't start with {schema_prefix}"
                     print(f"  ✗ {error_msg}")
-                    summary['errors'].append(error_msg)
+                    summary["errors"].append(error_msg)
                     continue
-                
+
                 try:
                     # Get all versions
-                    versions = client.search_model_versions(f"name='{model_name}'")
-                    print(f"\n  Model: {model_name} ({len(versions)} versions)")
-                    
+                    versions = client.search_model_versions(
+                        f"name='{model_name}'"
+                    )
+                    print(
+                        f"\n  Model: {model_name} ({len(versions)} versions)"
+                    )
+
                     if dry_run:
-                        print(f"    [DRY RUN] Would delete {len(versions)} versions and the model")
-                        summary['models'] += 1
-                        summary['model_versions'] += len(versions)
+                        print(
+                            f"    [DRY RUN] Would delete {len(versions)} versions and the model"
+                        )
+                        summary["models"] += 1
+                        summary["model_versions"] += len(versions)
                     else:
                         # Delete all versions first
                         for version in versions:
                             try:
                                 client.delete_model_version(
-                                    name=model_name,
-                                    version=version.version
+                                    name=model_name, version=version.version
                                 )
-                                print(f"    ✓ Deleted version {version.version}")
-                                summary['model_versions'] += 1
+                                print(
+                                    f"    ✓ Deleted version {version.version}"
+                                )
+                                summary["model_versions"] += 1
                             except Exception as e:
                                 error_msg = f"Failed to delete version {version.version}: {str(e)[:100]}"
                                 print(f"    ✗ {error_msg}")
-                                summary['errors'].append(error_msg)
-                        
+                                summary["errors"].append(error_msg)
+
                         # Delete the registered model
                         client.delete_registered_model(model_name)
                         print(f"  ✓ Deleted registered model: {model_name}")
-                        summary['models'] += 1
-                        
+                        summary["models"] += 1
+
                 except Exception as e:
-                    error_msg = f"Failed to process model {model_name}: {str(e)[:100]}"
+                    error_msg = (
+                        f"Failed to process model {model_name}: {str(e)[:100]}"
+                    )
                     print(f"  ✗ {error_msg}")
-                    summary['errors'].append(error_msg)
-                
+                    summary["errors"].append(error_msg)
+
     except Exception as e:
         error_msg = f"Error cleaning up models: {str(e)[:200]}"
         print(f"✗ {error_msg}")
-        summary['errors'].append(error_msg)
-    
+        summary["errors"].append(error_msg)
+
     # ==================================================================
     # Summary
     # ==================================================================
@@ -349,22 +389,22 @@ def cleanup_databricks_schema(catalog, schema, dry_run=False):
     print(f"Models deleted:           {summary['models']}")
     print(f"Model versions deleted:   {summary['model_versions']}")
     print(f"Errors encountered:       {len(summary['errors'])}")
-    
-    if summary['errors']:
+
+    if summary["errors"]:
         print("\nErrors:")
-        for error in summary['errors'][:10]:  # Show first 10 errors
+        for error in summary["errors"][:10]:  # Show first 10 errors
             print(f"  - {error}")
-        if len(summary['errors']) > 10:
+        if len(summary["errors"]) > 10:
             print(f"  ... and {len(summary['errors']) - 10} more errors")
-    
+
     if dry_run:
         print("\n⚠️  This was a DRY RUN - no objects were actually deleted")
         print("   Run with dry_run=False to perform actual deletion")
     else:
         print(f"\n✓ Cleanup of {full_schema} completed!")
-    
+
     print("=" * 70)
-    
+
     return summary
 
 
@@ -385,8 +425,10 @@ def cleanup_databricks_schema(catalog, schema, dry_run=False):
 
 # DBTITLE 1,HINTS
 HINTS = {
-    ("predictions","quest_1"): 
-      """
+    (
+        "predictions",
+        "quest_1",
+    ): """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
           <p>If you navigate to Catalog > gtc25_ml_catalog > gtc2025_(your_user_number) > Models and click on the coffee_xgb_model, you will see the alias of the latest version of the model.</p>
@@ -396,8 +438,10 @@ HINTS = {
           <pre><code>alias = "@champion"</code></pre>
         </details>
         """,
-    ("predictions","quest_2"):
-      """
+    (
+        "predictions",
+        "quest_2",
+    ): """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
           <p class="answer"><strong>Hint for Question 1</strong></p>
@@ -460,8 +504,10 @@ HINTS = {
 
         </details>
         """,
-    ("predictions","quest_3",):
-      """
+    (
+        "predictions",
+        "quest_3",
+    ): """
           <details class="hintbox">
             <summary>Show me the hint!</summary>
 
@@ -561,8 +607,7 @@ HINTS = {
     (
         "model_training",
         "quest_4",
-    ): 
-      """
+    ): """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
           <p class="answer"><strong>Hint for Question 1</strong></p>
@@ -583,6 +628,7 @@ HINTS = {
 }
 
 # COMMAND ----------
+
 
 # DBTITLE 1,Function: load_hint
 def load_hint(notebook, quest_id):

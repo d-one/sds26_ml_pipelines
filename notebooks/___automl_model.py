@@ -19,7 +19,9 @@
 # COMMAND ----------
 
 # DBTITLE 1,Load Feature table
-training_data_df = spark.table("gtc25_ml_catalog.source_data.coffee_labeled_features")
+training_data_df = spark.table(
+    "gtc25_ml_catalog.source_data.coffee_labeled_features"
+)
 
 # COMMAND ----------
 
@@ -27,8 +29,10 @@ training_data_df = spark.table("gtc25_ml_catalog.source_data.coffee_labeled_feat
 import databricks.automl as automl
 
 # AutoML parameters
-AUTOML_EXPERIMENT_DIRECTORY = f"/Workspace/Users/{USER_EMAIL}/automl_experiments/"
-EXPERIMENT_NAME =f"coffee_automl_{MY_SCHEMA}_2"
+AUTOML_EXPERIMENT_DIRECTORY = (
+    f"/Workspace/Users/{USER_EMAIL}/automl_experiments/"
+)
+EXPERIMENT_NAME = f"coffee_automl_{MY_SCHEMA}_2"
 
 print("-" * 100)
 print("Creating AutoML experiment")
@@ -44,5 +48,5 @@ summary = automl.classify(
     experiment_name=EXPERIMENT_NAME,
     exclude_cols=["ID", "Timestamp"],
     pos_label="0",
-    timeout_minutes=60,  # Default value 120 minutes, minimum 5 minutes
+    timeout_minutes=5,  # Default value 120 minutes, minimum 5 minutes
 )

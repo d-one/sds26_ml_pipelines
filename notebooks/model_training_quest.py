@@ -26,7 +26,6 @@ from databricks.feature_engineering import (
 )
 from mlflow import MlflowClient
 from pyspark.ml import Pipeline
-from pyspark.ml.feature import OneHotEncoder, StringIndexer, VectorAssembler
 from pyspark.sql import functions as F
 from pyspark.sql import types as T
 from xgboost.spark import SparkXGBClassifier
@@ -43,7 +42,9 @@ from xgboost.spark import SparkXGBClassifier
 
 # DBTITLE 1,Loading the training set
 fe = FeatureEngineeringClient()
-labeled_fact_df = spark.table(f"{CATALOG}.{SCHEMA_WITH_SOURCE_DATA}.coffee_labeled_fact")
+labeled_fact_df = spark.table(
+    f"{CATALOG}.{SCHEMA_WITH_SOURCE_DATA}.coffee_labeled_fact"
+)
 
 # Compose a Feature Lookup that pulls engineered columns by key + timestamp
 feature_lookup = FeatureLookup(
@@ -57,6 +58,7 @@ feature_lookup = FeatureLookup(
 training_set = fe.create_training_set(
     df=labeled_fact_df,
     feature_lookups=[feature_lookup],
+    label="Coffee_Drinker",
 )
 
 full_labeled_df = training_set.load_df()
@@ -64,7 +66,7 @@ full_labeled_df = training_set.load_df()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Quest 1 (⌨️) · Configure Splits, Pipeline, and MLflow
+# MAGIC ## Quest 1 (⌨️) · Configure Splits, Pipeline, and MLflow ———  ⏱️ 2'
 # MAGIC **Goal:** create data splits, build preprocessing stages, and configure the MLflow experiment.
 # MAGIC
 # MAGIC What do you thing is a good split?<br>
@@ -74,7 +76,7 @@ full_labeled_df = training_set.load_df()
 # COMMAND ----------
 
 # DBTITLE 1,Load hint for Quest 1
-load_hint("model_training", "quest_2")
+load_hint("model_training", "quest_1")
 
 # COMMAND ----------
 
@@ -92,13 +94,15 @@ for split_name, split_df in [
 # Assemble preprocessing steps once so every model trial reuses them
 STAGES = build_preprocessing_stages()
 
-exp_id = setup_experiment(f"/Workspace/Users/{USER_EMAIL}/coffee_hp_tuning_experiment")
+exp_id = setup_experiment(
+    f"/Workspace/Users/{USER_EMAIL}/coffee_hp_tuning_experiment"
+)
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Preparing for the next Quest...
-# MAGIC **Run** the next cells to wrap your training logic in an objective function. 
+# MAGIC **Run** the next cells to wrap your training logic in an objective function.
 # MAGIC
 # MAGIC This is what we earlier called a `Trial`.
 
@@ -118,6 +122,7 @@ base_xgb_params = {
 
 # COMMAND ----------
 
+
 # DBTITLE 1,Objective function
 # We wrap our model training in an objective function
 def objective(trial: optuna.Trial) -> float:
@@ -127,13 +132,21 @@ def objective(trial: optuna.Trial) -> float:
         else f"optuna_trial_{trial.number:03d}"
     )
 
-    with mlflow.start_run(run_name=run_name, nested=True, tags={"mlflow.parentRunId": parent_run.info.run_id}):
+    with mlflow.start_run(
+        run_name=run_name,
+        nested=True,
+        tags={"mlflow.parentRunId": parent_run.info.run_id},
+    ):
         params = {
             "eta": trial.suggest_float("eta", 0.01, 0.3, log=True),
             "max_depth": trial.suggest_int("max_depth", 3, 12),
-            "min_child_weight": trial.suggest_float("min_child_weight", 1.0, 10.0),
+            "min_child_weight": trial.suggest_float(
+                "min_child_weight", 1.0, 10.0
+            ),
             "subsample": trial.suggest_float("subsample", 0.5, 1.0),
-            "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
+            "colsample_bytree": trial.suggest_float(
+                "colsample_bytree", 0.5, 1.0
+            ),
         }
 
         xgb = SparkXGBClassifier(**base_xgb_params, **params)
@@ -141,10 +154,14 @@ def objective(trial: optuna.Trial) -> float:
         pipeline = Pipeline(stages=[*STAGES, xgb])
         model = pipeline.fit(train_df)
 
-        val_predictions = model.transform(valid_df).select("Coffee_Drinker", "prediction")
+        val_predictions = model.transform(valid_df).select(
+            "Coffee_Drinker", "prediction"
+        )
 
         val_precision0, val_recall0, val_f10 = class_zero_metrics(
-            df=val_predictions, label_col="Coffee_Drinker", pred_col="prediction"
+            df=val_predictions,
+            label_col="Coffee_Drinker",
+            pred_col="prediction",
         )
 
         mlflow.log_params(params)
@@ -157,10 +174,11 @@ def objective(trial: optuna.Trial) -> float:
         )
         return val_f10
 
+
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Quest 2 (⌨️) · Execute the Optuna Study - 5 minutes
+# MAGIC ## Quest 2 (⌨️) · Execute the Optuna Study ———  ⏱️ 5'
 # MAGIC **Goal:** run Optuna with a head start!
 # MAGIC
 # MAGIC Now that we defined our trial, its time to run the study: a collection of trials! <br>
@@ -181,16 +199,20 @@ optuna.logging.set_verbosity(optuna.logging.ERROR)
 # TODO: Fill in the placeholders in the below dictionary to complete Quest 4
 seed_params = {
     "eta": ...,  # also known as learning rate, type: decimal
-    "colsample_bytree": ..., #                  type: decimal
-    "max_depth": ..., #                         type: int
-    "min_child_weight": ..., #                  type: decimal
-    "subsample": ..., #                         type: decimal
+    "colsample_bytree": ...,  #                  type: decimal
+    "max_depth": ...,  #                         type: int
+    "min_child_weight": ...,  #                  type: decimal
+    "subsample": ...,  #                         type: decimal
 }
 
-with mlflow.start_run(experiment_id=exp_id, run_name="parent_run_optuna_hp", nested=True) as parent_run:
+with mlflow.start_run(
+    experiment_id=exp_id, run_name="parent_run_optuna_hp", nested=True
+) as parent_run:
 
     # We define a study, which is a collection of trials
-    study = optuna.create_study(direction="maximize", study_name="coffee_optuna_study")
+    study = optuna.create_study(
+        direction="maximize", study_name="coffee_optuna_study"
+    )
 
     # We seed the starting parameters
     study.enqueue_trial(seed_params, skip_if_exists=True)
@@ -216,7 +238,7 @@ best_pipeline = Pipeline(stages=[*STAGES, best_xgb])
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Quest 3 (⌨️) · Evaluate the Tuned Model
+# MAGIC ## Quest 3 (⌨️) · Evaluate the Tuned Model ———  ⏱️ 3'
 # MAGIC **Goal:** fit the best parameters on train+validation, score the test set, and report feature importances.
 # MAGIC >You only need to replace the `...` placeholders with dataframes.
 
@@ -249,7 +271,7 @@ display(confusion_matrix_pdf)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Quest 4 (📖) · Register the Final Model
+# MAGIC ## Quest 4 (📖) · Register the Final Model ———  ⏱️ 3'
 # MAGIC **Goal:** log artifacts to MLflow, and manage UC aliases.
 # MAGIC
 # MAGIC **Run** the below cell.
@@ -288,7 +310,9 @@ with mlflow.start_run(run_name="coffee_xgb_best") as run:
         signature=signature,
     )
 
-    versions = client.search_model_versions(f"name = '{f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model"}'")
+    versions = client.search_model_versions(
+        f"name = '{f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model"}'"
+    )
     champion_version = versions[0].version
 
     client.set_registered_model_alias(
