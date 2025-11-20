@@ -36,7 +36,16 @@ from xgboost.spark import SparkXGBClassifier
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC ## Format
+# MAGIC
+# MAGIC ## Quest 1 (⌨️) · Load the model ———  ⏱️ 2'
+# MAGIC ## Quest 2 (📖) · Understanding the result ———  ⏱️ 3'
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ## Quest 1 · Prepare the Feature Store Training Set
+# MAGIC
 # MAGIC **Goal:** load the fact table and build a Feature Store training set that joins in features.
 # MAGIC
 # MAGIC You only need to replace the `...` placeholders.
