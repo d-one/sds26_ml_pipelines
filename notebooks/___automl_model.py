@@ -8,7 +8,7 @@
 # MAGIC
 # MAGIC To save some time, we already ran an experiment for you:
 # MAGIC
-# MAGIC https://adb-1451829595406012.12.azuredatabricks.net/?o=1451829595406012#mlflow/experiments/895133209892626
+# MAGIC https://adb-1451829595406012.12.azuredatabricks.net/ml/experiments/1042389076180991
 # MAGIC
 
 # COMMAND ----------

@@ -60,8 +60,8 @@ FEATURE_COLUMNS = NUMERICAL_COLUMNS + CATEGORICAL_COLUMNS
 
 # COMMAND ----------
 
-
 # DBTITLE 1,Function: class_zero_metrics
+
 def class_zero_metrics(
     df, label_col: str, pred_col: str
 ) -> Tuple[float, float, float]:
@@ -561,7 +561,7 @@ HINTS = {
     ): """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
-          <p>Review the AutoML experiment: <a href="https://adb-1451829595406012.12.azuredatabricks.net/?o=1451829595406012#mlflow/experiments/895133209892626" target="_blank">Coffee AutoML run</a>.</p>
+          <p>Review the AutoML experiment: <a href="https://adb-1451829595406012.12.azuredatabricks.net/ml/experiments/1042389076180991" target="_blank">Coffee AutoML run</a>.</p>
           <p>You can click a model run with a suitable type (XGBoost) and search for parameters in the Overview tab! 🔎</p>
         </details>
         <details class="hintbox">
@@ -629,8 +629,8 @@ HINTS = {
 
 # COMMAND ----------
 
-
 # DBTITLE 1,Function: load_hint
+
 def load_hint(notebook, quest_id):
     base_css = """
     <style>
