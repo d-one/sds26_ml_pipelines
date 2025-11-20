@@ -561,7 +561,7 @@ HINTS = {
     ): """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
-          <p>Review the AutoML experiment: <a href="https://adb-1451829595406012.12.azuredatabricks.net/ml/experiments/1042389076180991" target="_blank">Coffee AutoML run</a>.</p>
+          <p>Review the AutoML experiment: <a href="https://adb-1451829595406012.12.azuredatabricks.net/ml/experiments/2194677846827561?o=1451829595406012" target="_blank">Coffee AutoML run</a>.</p>
           <p>You can click a model run with a suitable type (XGBoost) and search for parameters in the Overview tab! 🔎</p>
         </details>
         <details class="hintbox">
