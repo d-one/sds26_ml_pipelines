@@ -2,8 +2,6 @@
 # MAGIC %md
 # MAGIC # Training & Registering the model
 # MAGIC Time to train and register the model!
-# MAGIC
-# MAGIC Work through the refreshed Optuna + MLflow workflow in quest form. Replace every `...` placeholder with real code before executing each quest.
 
 # COMMAND ----------
 
@@ -36,15 +34,10 @@ from xgboost.spark import SparkXGBClassifier
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Quest 1 · Prepare the Feature Store Training Set
-# MAGIC **Goal:** load the fact table and build a Feature Store training set that joins in features.
+# MAGIC ##Prepare the Feature Store Training Set
+# MAGIC Load the fact table and build a Feature Store training set that joins in features.
 # MAGIC
-# MAGIC >You only need to replace the `...` placeholders. Need a nudge? Use the hint loader below.
-
-# COMMAND ----------
-
-# DBTITLE 1,Load hint for Quest 1
-load_hint("model_training", "quest_1")
+# MAGIC **Run** the cell below.
 
 # COMMAND ----------
 
@@ -63,8 +56,7 @@ feature_lookup = FeatureLookup(
 # Materialize a Feature Store training set with lookups and our label
 training_set = fe.create_training_set(
     df=labeled_fact_df,
-    feature_lookups=[feature_lookup],  # TODO replace placeholder
-    label="Coffee_Drinker",
+    feature_lookups=[feature_lookup],
 )
 
 full_labeled_df = training_set.load_df()
@@ -72,18 +64,16 @@ full_labeled_df = training_set.load_df()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Quest 2 · Configure Splits, Pipeline, and MLflow
+# MAGIC ## Quest 1 (⌨️) · Configure Splits, Pipeline, and MLflow
 # MAGIC **Goal:** create data splits, build preprocessing stages, and configure the MLflow experiment.
 # MAGIC
 # MAGIC What do you thing is a good split?<br>
 # MAGIC
-# MAGIC >You only need to replace the `...` placeholders. Need a nudge? Use the hint loader below.
-# MAGIC
-# MAGIC
+# MAGIC >You only need to replace the `...` placeholders.
 
 # COMMAND ----------
 
-# DBTITLE 1,Load hint for Quest 2
+# DBTITLE 1,Load hint for Quest 1
 load_hint("model_training", "quest_2")
 
 # COMMAND ----------
@@ -170,7 +160,7 @@ def objective(trial: optuna.Trial) -> float:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Quest 3 · Execute the Optuna Study - 5 minutes
+# MAGIC ## Quest 2 (⌨️) · Execute the Optuna Study - 5 minutes
 # MAGIC **Goal:** run Optuna with a head start!
 # MAGIC
 # MAGIC Now that we defined our trial, its time to run the study: a collection of trials! <br>
@@ -180,8 +170,8 @@ def objective(trial: optuna.Trial) -> float:
 
 # COMMAND ----------
 
-# DBTITLE 1,Load hint for Quest 3
-load_hint("model_training", "quest_3")
+# DBTITLE 1,Load hint for Quest 2
+load_hint("model_training", "quest_2")
 
 # COMMAND ----------
 
@@ -190,11 +180,11 @@ optuna.logging.set_verbosity(optuna.logging.ERROR)
 
 # TODO: Fill in the placeholders in the below dictionary to complete Quest 4
 seed_params = {
-    "eta": ...,  # also known as learning rate
-    "colsample_bytree": ...,
-    "max_depth": ...,
-    "min_child_weight": ...,
-    "subsample": ...,
+    "eta": ...,  # also known as learning rate, type: decimal
+    "colsample_bytree": ..., #                  type: decimal
+    "max_depth": ..., #                         type: int
+    "min_child_weight": ..., #                  type: decimal
+    "subsample": ..., #                         type: decimal
 }
 
 with mlflow.start_run(experiment_id=exp_id, run_name="parent_run_optuna_hp", nested=True) as parent_run:
@@ -226,17 +216,14 @@ best_pipeline = Pipeline(stages=[*STAGES, best_xgb])
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Quest 4 · Evaluate the Tuned Model
+# MAGIC ## Quest 3 (⌨️) · Evaluate the Tuned Model
 # MAGIC **Goal:** fit the best parameters on train+validation, score the test set, and report feature importances.
-# MAGIC
-# MAGIC >You only need to replace the `...` placeholders.
-# MAGIC
-# MAGIC Need a nudge? Use the hint loader below.
+# MAGIC >You only need to replace the `...` placeholders with dataframes.
 
 # COMMAND ----------
 
-# DBTITLE 1,Load hint for Quest 4
-load_hint("model_training", "quest_4")
+# DBTITLE 1,Load hint for Quest 3
+load_hint("model_training", "quest_3")
 
 # COMMAND ----------
 
@@ -262,7 +249,7 @@ display(confusion_matrix_pdf)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Quest 5 · Register the Final Model
+# MAGIC ## Quest 4 (📖) · Register the Final Model
 # MAGIC **Goal:** log artifacts to MLflow, and manage UC aliases.
 # MAGIC
 # MAGIC **Run** the below cell.
@@ -271,12 +258,12 @@ display(confusion_matrix_pdf)
 # MAGIC >Can you find your model on Unity Catalog?
 # MAGIC
 # MAGIC **Question 2**
-# MAGIC >Why do you think we assign an alias to the model?
+# MAGIC >Why do we assign an alias to the model?
 
 # COMMAND ----------
 
-# DBTITLE 1,Load hint for Quest 5
-load_hint("model_training", "quest_5")
+# DBTITLE 1,Load hint for Quest 4
+load_hint("model_training", "quest_4")
 
 # COMMAND ----------
 

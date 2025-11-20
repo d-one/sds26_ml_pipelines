@@ -498,23 +498,6 @@ HINTS = {
     ): """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
-          <p>Reuse the feature list you derived in Quest 1.</p>
-        </details>
-        <details class="hintbox">
-          <summary>Just show me the answer… 🫠</summary>
-          <div class="code-block">
-            <pre><span class="variable">feature_names</span><span class="operator">=</span><span class="variable">all_feature_cols</span>
-<span class="variable">feature_lookups</span><span class="operator">=</span><span class="bracket">[</span><span class="variable">feature_lookup</span><span class="bracket">]</span></pre>
-          </div>
-        </details>
-
-        """,
-    (
-        "model_training",
-        "quest_2",
-    ): """
-        <details class="hintbox">
-          <summary>Show me the hint!</summary>
           <p>Use three decimal numbers in the placeholder list.</p>
         </details>
         <details class="hintbox">
@@ -528,11 +511,12 @@ HINTS = {
         """,
     (
         "model_training",
-        "quest_3",
+        "quest_2",
     ): """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
           <p>Review the AutoML experiment: <a href="https://adb-1451829595406012.12.azuredatabricks.net/?o=1451829595406012#mlflow/experiments/895133209892626" target="_blank">Coffee AutoML run</a>.</p>
+          <p>You can click a model run with a suitable type (XGBoost) and search for parameters in the Overview tab! 🔎</p>
         </details>
         <details class="hintbox">
           <summary>Just show me the answer… 🫠</summary>
@@ -549,13 +533,13 @@ HINTS = {
         """,
     (
         "model_training",
-        "quest_4",
+        "quest_3",
     ): """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
           <ul>
             <li>fill unionByName(...) with the df what we used for <b>validating</b> hyperparameters.</li>
-            <li>fit(...) <b>trains</b> the model.</li>
+            <li>fit(...) <b>trains</b> the model on the <b>union</b> dataframe.</li>
             <li>transform(...) makes predictions to <b>test</b> the model.</li>
           </ul>
         </details>
@@ -576,15 +560,24 @@ HINTS = {
         """,
     (
         "model_training",
-        "quest_5",
-    ): """
+        "quest_4",
+    ): 
+      """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
-          <p>Take a break 🏖️! Just run the cell!</p>
+          <p class="answer"><strong>Hint for Question 1</strong></p>
+          <p>It follows the standard three-level namespace of Unity Catalog.</p>
+          <p class="answer"><strong>Hint for Question 2</strong></p>
+          <p>What would happen if you had to train a new model? Or revert to an old one?</p>
+
         </details>
         <details class="hintbox">
           <summary>Just show me the answer… 🫠</summary>
-          <p>Seriously, just run it 🚀</p>
+          <p class="answer"><strong>Answer to Question 1</strong></p>
+          <p>Navigate to Catalog > gtc25_ml_catalog > gtc2025_(your_user_number) > Models and click on the coffee_xgb_model</p>
+          <p class="answer"><strong>Answer to Question 2</strong></p>
+          <p>We use aliases on Databricks models so that production systems always point to a stable name like "champion" instead of a specific version, which lets us update or roll back models instantly without changing any downstream code.</p>
+
         </details>
         """,
 }
