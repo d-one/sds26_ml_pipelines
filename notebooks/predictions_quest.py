@@ -43,14 +43,13 @@ print(f"Loaded holdout table with {holdout_df.count():,} rows.")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Quest 1 · Load the model
+# MAGIC ## Quest 1 (⌨️) · Load the model ———  ⏱️ 2'
 # MAGIC
 # MAGIC It is time to load the model that we trained in the previous notebook and use it to make predictions on unseen data!
 # MAGIC
 # MAGIC > Can you complete the missing alias to load the model?
 # MAGIC
 # MAGIC [Databricks Documentation for Model Aliases](https://docs.databricks.com/aws/en/machine-learning/manage-model-lifecycle/#use-model-aliases)
-# MAGIC
 
 # COMMAND ----------
 
@@ -80,7 +79,7 @@ print(f"DataFrame predictions_df has been written to table:\n\t- {PREDICTIONS_TA
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Quest 2 · Understanding the result
+# MAGIC ## Quest 2 (📖) · Understanding the result ———  ⏱️ 3'
 # MAGIC
 # MAGIC You used the model to make predictions on the holdout dataset.
 # MAGIC
@@ -112,7 +111,7 @@ load_hint("predictions", "quest_2")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Quest 3 · Evaluate the model's performance in the production data
+# MAGIC ## Quest 3 (📖) · Model Evaluation ———  ⏱️ 3'
 # MAGIC
 # MAGIC The below cell uses MLFlow Evaluate to assess the performance of our model in production.
 # MAGIC
@@ -151,7 +150,7 @@ with mlflow.start_run(run_name=run_name):
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Quest 4 · A Duel for the crown!
+# MAGIC ## Quest 4 (📖) · A Duel for the crown! ———  ⏱️ 5'
 # MAGIC
 # MAGIC Days passed (in theory) and now we have a bigger labeled dataset.
 # MAGIC
