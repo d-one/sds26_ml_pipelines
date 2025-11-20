@@ -39,9 +39,7 @@ from xgboost.spark import SparkXGBClassifier
 # MAGIC ## Quest 1 · Prepare the Feature Store Training Set
 # MAGIC **Goal:** load the fact table and build a Feature Store training set that joins in features.
 # MAGIC
-# MAGIC You only need to replace the `...` placeholders.
-# MAGIC
-# MAGIC Need a nudge? Use the hint loader below.
+# MAGIC >You only need to replace the `...` placeholders. Need a nudge? Use the hint loader below.
 
 # COMMAND ----------
 
@@ -57,7 +55,7 @@ labeled_fact_df = spark.table(f"{CATALOG}.{SCHEMA_WITH_SOURCE_DATA}.coffee_label
 # Compose a Feature Lookup that pulls engineered columns by key + timestamp
 feature_lookup = FeatureLookup(
     table_name=f"{CATALOG}.{SCHEMA_WITH_SOURCE_DATA}.coffee_labeled_features",
-    feature_names=...,  # TODO replace placeholder
+    feature_names=FEATURE_COLUMNS,
     lookup_key="ID",
     timestamp_lookup_key="Timestamp",
 )
@@ -65,7 +63,7 @@ feature_lookup = FeatureLookup(
 # Materialize a Feature Store training set with lookups and our label
 training_set = fe.create_training_set(
     df=labeled_fact_df,
-    feature_lookups=[...],  # TODO replace placeholder
+    feature_lookups=[feature_lookup],  # TODO replace placeholder
     label="Coffee_Drinker",
 )
 
@@ -77,11 +75,11 @@ full_labeled_df = training_set.load_df()
 # MAGIC ## Quest 2 · Configure Splits, Pipeline, and MLflow
 # MAGIC **Goal:** create data splits, build preprocessing stages, and configure the MLflow experiment.
 # MAGIC
-# MAGIC What do you thing is a good split?
+# MAGIC What do you thing is a good split?<br>
 # MAGIC
-# MAGIC You only need to replace the `...` placeholders.
+# MAGIC >You only need to replace the `...` placeholders. Need a nudge? Use the hint loader below.
 # MAGIC
-# MAGIC Need a nudge? Use the hint loader below.
+# MAGIC
 
 # COMMAND ----------
 
@@ -109,17 +107,10 @@ exp_id = setup_experiment(f"/Workspace/Users/{USER_EMAIL}/coffee_hp_tuning_exper
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Quest 3 · Execute the Optuna Study
-# MAGIC **Goal:** run Optuna with a head start!
+# MAGIC ## Preparing for the next Quest...
+# MAGIC **Run** the next cells to wrap your training logic in an objective function. 
 # MAGIC
-# MAGIC What starting parameters should we use, if any at all? How would you decide?
-# MAGIC
-# MAGIC The only thing you need to do is to fill the `seed_params` dictionary.
-
-# COMMAND ----------
-
-# DBTITLE 1,Load hint for Quest 3
-load_hint("model_training", "quest_3")
+# MAGIC This is what we earlier called a `Trial`.
 
 # COMMAND ----------
 
@@ -138,7 +129,7 @@ base_xgb_params = {
 # COMMAND ----------
 
 # DBTITLE 1,Objective function
-# We wrap our model training in an objective function. This is a Trial
+# We wrap our model training in an objective function
 def objective(trial: optuna.Trial) -> float:
     run_name = (
         "seed_parameters_trial"
@@ -175,6 +166,22 @@ def objective(trial: optuna.Trial) -> float:
             }
         )
         return val_f10
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Quest 3 · Execute the Optuna Study - 5 minutes
+# MAGIC **Goal:** run Optuna with a head start!
+# MAGIC
+# MAGIC Now that we defined our trial, its time to run the study: a collection of trials! <br>
+# MAGIC What starting parameters should we use, if any at all? How would you decide?
+# MAGIC
+# MAGIC >The only thing you need to do is to **fill the** `seed_params` dictionary.
+
+# COMMAND ----------
+
+# DBTITLE 1,Load hint for Quest 3
+load_hint("model_training", "quest_3")
 
 # COMMAND ----------
 
@@ -222,7 +229,7 @@ best_pipeline = Pipeline(stages=[*STAGES, best_xgb])
 # MAGIC ## Quest 4 · Evaluate the Tuned Model
 # MAGIC **Goal:** fit the best parameters on train+validation, score the test set, and report feature importances.
 # MAGIC
-# MAGIC You only need to replace the `...` placeholders.
+# MAGIC >You only need to replace the `...` placeholders.
 # MAGIC
 # MAGIC Need a nudge? Use the hint loader below.
 
@@ -258,7 +265,13 @@ display(confusion_matrix_pdf)
 # MAGIC ## Quest 5 · Register the Final Model
 # MAGIC **Goal:** log artifacts to MLflow, and manage UC aliases.
 # MAGIC
-# MAGIC No need to do anything here, just study a bit the cell and run it.
+# MAGIC **Run** the below cell.
+# MAGIC
+# MAGIC **Question 1**
+# MAGIC >Can you find your model on Unity Catalog?
+# MAGIC
+# MAGIC **Question 2**
+# MAGIC >Why do you think we assign an alias to the model?
 
 # COMMAND ----------
 

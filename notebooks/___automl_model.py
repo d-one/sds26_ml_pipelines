@@ -28,7 +28,7 @@ import databricks.automl as automl
 
 # AutoML parameters
 AUTOML_EXPERIMENT_DIRECTORY = f"/Workspace/Users/{USER_EMAIL}/automl_experiments/"
-EXPERIMENT_NAME =f"coffee_automl_{MY_NAME}"
+EXPERIMENT_NAME =f"coffee_automl_{MY_SCHEMA}_2"
 
 print("-" * 100)
 print("Creating AutoML experiment")
@@ -38,7 +38,7 @@ print("-" * 100, "\n")
 
 summary = automl.classify(
     dataset=training_data_df,
-    target_col="Coffee_Intake_Binary",
+    target_col="Coffee_Drinker",
     primary_metric="f1",
     experiment_dir=AUTOML_EXPERIMENT_DIRECTORY,
     experiment_name=EXPERIMENT_NAME,
