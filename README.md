@@ -1,6 +1,6 @@
-# GTC25 / End-to-end Machine Learning Pipelines in Databricks
+# SDS 2026 / Mastering the ML Lifecycle on Databricks
 
-This repository hosts the Databricks notebooks and supporting utilities for τηε GTC25 workshop "End-to-end Machine Learning Pipelines in Databricks". The workshop focuses on the training of an XGBoost classifier using a synthetic dataset of 10,000 records, predicting whether a person drinks coffee or not.
+This repository hosts the Databricks notebooks and supporting utilities for the SDS 2026 workshop "Mastering the ML Lifecycle on Databricks". The workshop focuses on the training of an XGBoost classifier using a synthetic dataset of 10,000 records, predicting whether a person drinks coffee or not.
 
 The model's hyperparameters are tuned using Optuna, and the best performing model is registered in the Unity Catalog using MLFlow, and finally served as an endpoint to be used in real-time predictions.
 
