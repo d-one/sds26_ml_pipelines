@@ -7,7 +7,7 @@ from typing import Tuple
 from pyspark.sql import functions as F
 
 # --- Defaults ---
-CATALOG = "gtc25_ml_catalog"
+CATALOG = "sds26_ml_catalog"
 SCHEMA_WITH_SOURCE_DATA = "source_data"
 
 # --- User info ---
@@ -162,7 +162,7 @@ def cleanup_databricks_schema(catalog, schema, dry_run=False):
     Parameters:
     -----------
     catalog : str
-        The catalog name (e.g., 'gtc25_ml_catalog')
+        The catalog name (e.g., 'sds26_ml_catalog')
     schema : str
         The schema name (e.g., 'michalis_kalligas')
     dry_run : bool, optional
@@ -413,10 +413,10 @@ def cleanup_databricks_schema(catalog, schema, dry_run=False):
 # ==================================================================
 
 # Example 1: Dry run to see what would be deleted (RECOMMENDED FIRST)
-# summary = cleanup_databricks_schema("gtc25_ml_catalog", "michalis_kalligas", dry_run=True)
+# summary = cleanup_databricks_schema("sds26_ml_catalog", "michalis_kalligas", dry_run=True)
 
 # Example 2: Actual cleanup
-# summary = cleanup_databricks_schema("gtc25_ml_catalog", "michalis_kalligas")
+# summary = cleanup_databricks_schema("sds26_ml_catalog", "michalis_kalligas")
 
 # Example 3: Cleanup another schema
 # summary = cleanup_databricks_schema("my_catalog", "my_schema", dry_run=True)
@@ -431,7 +431,7 @@ HINTS = {
     ): """
         <details class="hintbox">
           <summary>Show me the hint!</summary>
-          <p>If you navigate to Catalog > gtc25_ml_catalog > gtc2025_(your_user_number) > Models and click on the coffee_xgb_model, you will see the alias of the latest version of the model.</p>
+          <p>If you navigate to Catalog > sds26_ml_catalog > sds26_(your_user_number) > Models and click on the coffee_xgb_model, you will see the alias of the latest version of the model.</p>
         </details>
         <details class="hintbox">
           <summary>Just show me the answer… 🫠</summary>
@@ -619,7 +619,7 @@ HINTS = {
         <details class="hintbox">
           <summary>Just show me the answer… 🫠</summary>
           <p class="answer"><strong>Answer to Question 1</strong></p>
-          <p>Navigate to Catalog > gtc25_ml_catalog > gtc2025_(your_user_number) > Models and click on the coffee_xgb_model</p>
+          <p>Navigate to Catalog > sds26_ml_catalog > sds26_(your_user_number) > Models and click on the coffee_xgb_model</p>
           <p class="answer"><strong>Answer to Question 2</strong></p>
           <p>We use aliases on Databricks models so that production systems always point to a stable name like "champion" instead of a specific version, which lets us update or roll back models instantly without changing any downstream code.</p>
 

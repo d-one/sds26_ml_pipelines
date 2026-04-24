@@ -10,7 +10,7 @@
 # DBTITLE 1,Data Exploration
 from ydata_profiling import ProfileReport
 
-coffee_df = spark.table("gtc25_ml_catalog.source_data.coffee_labeled_features")
+coffee_df = spark.table("sds26_ml_catalog.source_data.coffee_labeled_features")
 display(coffee_df.limit(10))
 
 df_profile = ProfileReport(coffee_df.toPandas(),
