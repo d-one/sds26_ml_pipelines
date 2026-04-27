@@ -32,7 +32,7 @@ import databricks.automl as automl
 AUTOML_EXPERIMENT_DIRECTORY = (
     f"/Workspace/Users/{USER_EMAIL}/automl_experiments/"
 )
-EXPERIMENT_NAME = f"coffee_automl_{MY_SCHEMA}_2"
+EXPERIMENT_NAME = f"coffee_automl_{MY_SCHEMA}"
 
 print("-" * 100)
 print("Creating AutoML experiment")
