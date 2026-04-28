@@ -122,8 +122,8 @@ base_xgb_params = {
 
 # COMMAND ----------
 
-
 # DBTITLE 1,Objective function
+
 # We wrap our model training in an objective function
 def objective(trial: optuna.Trial) -> float:
     run_name = (
@@ -310,8 +310,9 @@ with mlflow.start_run(run_name="coffee_xgb_best") as run:
         signature=signature,
     )
 
+    model_name = f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model"
     versions = client.search_model_versions(
-        f"name = '{f"{CATALOG}.{MY_SCHEMA}.coffee_xgb_model"}'"
+        f"name = '{model_name}'"
     )
     champion_version = versions[0].version
 

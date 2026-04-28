@@ -17,11 +17,18 @@ USER_EMAIL = parts[1].split("/")[0] if len(parts) > 1 else None
 MY_SCHEMA = USER_EMAIL.split("@")[0]
 MY_SCHEMA = re.sub(r"[^a-zA-Z0-9_]", "_", MY_SCHEMA)
 
+# PIP_REQUIREMENTS = [
+#     "mlflow==3.6.0",
+#     "pyspark==3.5.2",
+#     "scikit-learn==1.4.2",
+#     "xgboost==2.0.3",
+# ]
 PIP_REQUIREMENTS = [
-    "mlflow==3.6.0",
-    "pyspark==3.5.2",
-    "scikit-learn==1.4.2",
-    "xgboost==2.0.3",
+    "mlflow==3.0.1",
+    "numpy==1.23.5",
+    "pyspark==3.5.0",
+    "scikit-learn==1.1.1",
+    "xgboost==1.7.6",
 ]
 
 spark.sql(f"CREATE SCHEMA IF NOT EXISTS {CATALOG}.{MY_SCHEMA}")
